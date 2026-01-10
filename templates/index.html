@@ -150,6 +150,48 @@
         .btn-orange:hover { background: #ea580c; }
         .add-log-form { margin-top: 12px; padding-top: 12px; border-top: 1px solid #eee; }
         .add-log-form textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; min-height: 60px; margin-bottom: 8px; }
+
+        /* Routes */
+        .btn-purple { background: #7c3aed; }
+        .btn-purple:hover { background: #6d28d9; }
+        .route-list { margin-top: 10px; }
+        .route-item { padding: 10px; border: 1px solid #eee; border-radius: 6px; margin-bottom: 8px; cursor: pointer; }
+        .route-item:hover { background: #f9fafb; }
+        .route-item h4 { font-size: 14px; margin-bottom: 2px; }
+        .route-item small { color: #666; }
+
+        /* Route Navigation Panel */
+        .route-nav {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 16px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+            z-index: 1000;
+            display: none;
+            min-width: 320px;
+            max-width: 90%;
+        }
+        .route-nav.active { display: block; }
+        .route-nav-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .route-nav-header h4 { margin: 0; font-size: 16px; }
+        .route-nav-progress { font-size: 13px; color: #666; margin-bottom: 10px; }
+        .route-nav-location { font-weight: 600; margin-bottom: 8px; }
+        .route-nav-address { font-size: 13px; color: #666; margin-bottom: 12px; }
+        .route-nav-buttons { display: flex; gap: 8px; }
+        .route-nav-buttons .btn { flex: 1; margin: 0; padding: 12px; }
+
+        /* Location selection for routes */
+        .location-select-list { max-height: 250px; overflow-y: auto; border: 1px solid #eee; border-radius: 6px; margin-bottom: 12px; }
+        .location-select-item { padding: 10px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .location-select-item:hover { background: #f9fafb; }
+        .location-select-item.selected { background: #eff6ff; }
+        .location-select-item:last-child { border-bottom: none; }
+        .location-order { width: 24px; height: 24px; background: #e5e7eb; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; }
+        .location-select-item.selected .location-order { background: #2563eb; color: white; }
     </style>
 </head>
 <body>
@@ -165,7 +207,24 @@
         </div>
         <div id="filter-results" class="search-results" style="display:none;"></div>
         <button class="btn" onclick="startAddLocation()">+ Add Location</button>
+        <button class="btn btn-purple" onclick="openRoutesModal()">Routes</button>
         <p class="location-count"><span id="count">0</span> locations</p>
+    </div>
+
+    <!-- Route Navigation Panel -->
+    <div id="route-nav" class="route-nav">
+        <div class="route-nav-header">
+            <h4 id="route-nav-title">Route Name</h4>
+            <button class="btn btn-secondary" style="width:auto;padding:6px 12px;" onclick="exitRoute()">Exit</button>
+        </div>
+        <div class="route-nav-progress">Stop <span id="route-current">1</span> of <span id="route-total">5</span></div>
+        <div id="route-nav-location" class="route-nav-location">Location Name</div>
+        <div id="route-nav-address" class="route-nav-address">Address here</div>
+        <div class="route-nav-buttons">
+            <button class="btn btn-secondary" onclick="prevStop()">Previous</button>
+            <a id="route-directions-btn" href="#" target="_blank" class="btn btn-success" style="text-decoration:none;text-align:center;">Directions</a>
+            <button class="btn" onclick="nextStop()">Next</button>
+        </div>
     </div>
 
     <!-- Add/Edit Modal -->
@@ -218,6 +277,43 @@
             <div class="add-log-form">
                 <textarea id="new-log-notes" placeholder="Add notes about this visit (optional)..."></textarea>
                 <button class="btn btn-success" onclick="checkIn()">Check In</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Routes Modal -->
+    <div id="routes-modal" class="modal">
+        <div class="modal-content" style="max-width:450px;">
+            <div class="logs-header">
+                <h3>Routes</h3>
+                <button class="btn btn-secondary" style="width:auto;padding:6px 12px;" onclick="closeRoutesModal()">Close</button>
+            </div>
+            <button class="btn" onclick="openCreateRouteModal()">+ Create New Route</button>
+            <div id="routes-list" class="route-list">
+                <div class="log-empty">No routes yet</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create/Edit Route Modal -->
+    <div id="route-form-modal" class="modal">
+        <div class="modal-content" style="max-width:450px;">
+            <h3 id="route-form-title">Create Route</h3>
+            <div class="form-group">
+                <label>Route Name *</label>
+                <input type="text" id="route-name" placeholder="e.g., Monday Route">
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <input type="text" id="route-description" placeholder="e.g., Downtown locations">
+            </div>
+            <div class="form-group">
+                <label>Select Locations (click in order)</label>
+                <div id="location-select-list" class="location-select-list"></div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closeRouteFormModal()">Cancel</button>
+                <button class="btn" onclick="saveRoute()">Save Route</button>
             </div>
         </div>
     </div>
@@ -477,6 +573,163 @@
             });
             document.getElementById('new-log-notes').value = '';
             await loadLogs();
+        }
+
+        // --- Routes ---
+        let selectedLocationIds = [];
+        let editingRouteId = null;
+        let activeRoute = null;
+        let currentStopIndex = 0;
+
+        async function openRoutesModal() {
+            await loadRoutes();
+            document.getElementById('routes-modal').classList.add('active');
+        }
+
+        function closeRoutesModal() {
+            document.getElementById('routes-modal').classList.remove('active');
+        }
+
+        async function loadRoutes() {
+            const response = await fetch('/api/routes');
+            const routes = await response.json();
+
+            const listEl = document.getElementById('routes-list');
+            if (routes.length === 0) {
+                listEl.innerHTML = '<div class="log-empty">No routes yet</div>';
+            } else {
+                listEl.innerHTML = routes.map(r => `
+                    <div class="route-item" onclick="startRoute(${r.id})">
+                        <h4>${r.name}</h4>
+                        <small>${r.location_count} stops${r.description ? ' • ' + r.description : ''}</small>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function openCreateRouteModal() {
+            editingRouteId = null;
+            selectedLocationIds = [];
+            document.getElementById('route-form-title').textContent = 'Create Route';
+            document.getElementById('route-name').value = '';
+            document.getElementById('route-description').value = '';
+            renderLocationSelectList();
+            closeRoutesModal();
+            document.getElementById('route-form-modal').classList.add('active');
+        }
+
+        function closeRouteFormModal() {
+            document.getElementById('route-form-modal').classList.remove('active');
+        }
+
+        function renderLocationSelectList() {
+            const listEl = document.getElementById('location-select-list');
+            listEl.innerHTML = allLocations.map(loc => {
+                const idx = selectedLocationIds.indexOf(loc.id);
+                const isSelected = idx !== -1;
+                return `
+                    <div class="location-select-item ${isSelected ? 'selected' : ''}" onclick="toggleLocationSelect(${loc.id})">
+                        <div class="location-order">${isSelected ? idx + 1 : ''}</div>
+                        <div>
+                            <strong>${loc.name}</strong><br>
+                            <small style="color:#666;">${loc.address || 'No address'}</small>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleLocationSelect(locId) {
+            const idx = selectedLocationIds.indexOf(locId);
+            if (idx === -1) {
+                selectedLocationIds.push(locId);
+            } else {
+                selectedLocationIds.splice(idx, 1);
+            }
+            renderLocationSelectList();
+        }
+
+        async function saveRoute() {
+            const name = document.getElementById('route-name').value.trim();
+            if (!name) {
+                alert('Please enter a route name');
+                return;
+            }
+            if (selectedLocationIds.length === 0) {
+                alert('Please select at least one location');
+                return;
+            }
+
+            const data = {
+                name,
+                description: document.getElementById('route-description').value.trim() || null,
+                location_ids: selectedLocationIds
+            };
+
+            const url = editingRouteId ? `/api/routes/${editingRouteId}` : '/api/routes';
+            const method = editingRouteId ? 'PUT' : 'POST';
+
+            await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            closeRouteFormModal();
+            openRoutesModal();
+        }
+
+        async function startRoute(routeId) {
+            const response = await fetch(`/api/routes/${routeId}`);
+            activeRoute = await response.json();
+            currentStopIndex = 0;
+
+            if (activeRoute.locations.length === 0) {
+                alert('This route has no locations');
+                return;
+            }
+
+            closeRoutesModal();
+            updateRouteNav();
+            document.getElementById('route-nav').classList.add('active');
+        }
+
+        function updateRouteNav() {
+            const stop = activeRoute.locations[currentStopIndex];
+            const loc = stop.location;
+
+            document.getElementById('route-nav-title').textContent = activeRoute.name;
+            document.getElementById('route-current').textContent = currentStopIndex + 1;
+            document.getElementById('route-total').textContent = activeRoute.locations.length;
+            document.getElementById('route-nav-location').textContent = loc.name;
+            document.getElementById('route-nav-address').textContent = loc.address || 'No address';
+            document.getElementById('route-directions-btn').href =
+                `https://www.google.com/maps/dir/?api=1&destination=${loc.latitude},${loc.longitude}`;
+
+            map.flyTo([loc.latitude, loc.longitude], 16);
+            setTimeout(() => markers[loc.id]?.openPopup(), 500);
+        }
+
+        function prevStop() {
+            if (currentStopIndex > 0) {
+                currentStopIndex--;
+                updateRouteNav();
+            }
+        }
+
+        function nextStop() {
+            if (currentStopIndex < activeRoute.locations.length - 1) {
+                currentStopIndex++;
+                updateRouteNav();
+            } else {
+                alert('Route complete!');
+            }
+        }
+
+        function exitRoute() {
+            document.getElementById('route-nav').classList.remove('active');
+            activeRoute = null;
+            currentStopIndex = 0;
         }
     </script>
 </body>

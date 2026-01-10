@@ -31,3 +31,29 @@ class VisitLog(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     location = relationship("Location", back_populates="visit_logs")
+
+
+class Route(Base):
+    """A route containing ordered locations."""
+    __tablename__ = "routes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    description = Column(String(500), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    locations = relationship("RouteLocation", back_populates="route", cascade="all, delete-orphan", order_by="RouteLocation.position")
+
+
+class RouteLocation(Base):
+    """Junction table for route-location with ordering."""
+    __tablename__ = "route_locations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    route_id = Column(Integer, ForeignKey("routes.id"), nullable=False)
+    location_id = Column(Integer, ForeignKey("locations.id"), nullable=False)
+    position = Column(Integer, nullable=False)
+
+    route = relationship("Route", back_populates="locations")
+    location = relationship("Location")

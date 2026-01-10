@@ -8,8 +8,9 @@ from pydantic import BaseModel
 from typing import Optional
 
 from app.database import engine, get_db, Base
-from app.models import Location, VisitLog
+from app.models import Location, VisitLog, Route, RouteLocation
 from datetime import datetime
+from typing import List
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -54,6 +55,42 @@ class VisitLogResponse(BaseModel):
     title: str
     notes: Optional[str]
     created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class RouteCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    location_ids: List[int] = []
+
+
+class RouteLocationResponse(BaseModel):
+    id: int
+    location_id: int
+    position: int
+    location: LocationResponse
+
+    class Config:
+        from_attributes = True
+
+
+class RouteResponse(BaseModel):
+    id: int
+    name: str
+    description: Optional[str]
+    locations: List[RouteLocationResponse] = []
+
+    class Config:
+        from_attributes = True
+
+
+class RouteListResponse(BaseModel):
+    id: int
+    name: str
+    description: Optional[str]
+    location_count: int
 
     class Config:
         from_attributes = True
@@ -173,3 +210,83 @@ def delete_visit_log(log_id: int, db: Session = Depends(get_db)):
     db.delete(db_log)
     db.commit()
     return {"message": "Log deleted"}
+
+
+# --- Route Endpoints ---
+
+@app.get("/api/routes")
+def get_routes(db: Session = Depends(get_db)):
+    """Get all routes with location count."""
+    routes = db.query(Route).all()
+    return [
+        {
+            "id": r.id,
+            "name": r.name,
+            "description": r.description,
+            "location_count": len(r.locations)
+        }
+        for r in routes
+    ]
+
+
+@app.post("/api/routes", response_model=RouteResponse)
+def create_route(route: RouteCreate, db: Session = Depends(get_db)):
+    """Create a new route with locations."""
+    db_route = Route(name=route.name, description=route.description)
+    db.add(db_route)
+    db.flush()
+
+    for idx, loc_id in enumerate(route.location_ids):
+        location = db.query(Location).filter(Location.id == loc_id).first()
+        if location:
+            route_loc = RouteLocation(route_id=db_route.id, location_id=loc_id, position=idx)
+            db.add(route_loc)
+
+    db.commit()
+    db.refresh(db_route)
+    return db_route
+
+
+@app.get("/api/routes/{route_id}", response_model=RouteResponse)
+def get_route(route_id: int, db: Session = Depends(get_db)):
+    """Get a single route with all locations."""
+    route = db.query(Route).filter(Route.id == route_id).first()
+    if not route:
+        raise HTTPException(status_code=404, detail="Route not found")
+    return route
+
+
+@app.put("/api/routes/{route_id}", response_model=RouteResponse)
+def update_route(route_id: int, route: RouteCreate, db: Session = Depends(get_db)):
+    """Update a route and its locations."""
+    db_route = db.query(Route).filter(Route.id == route_id).first()
+    if not db_route:
+        raise HTTPException(status_code=404, detail="Route not found")
+
+    db_route.name = route.name
+    db_route.description = route.description
+
+    # Clear existing locations and re-add
+    db.query(RouteLocation).filter(RouteLocation.route_id == route_id).delete()
+
+    for idx, loc_id in enumerate(route.location_ids):
+        location = db.query(Location).filter(Location.id == loc_id).first()
+        if location:
+            route_loc = RouteLocation(route_id=route_id, location_id=loc_id, position=idx)
+            db.add(route_loc)
+
+    db.commit()
+    db.refresh(db_route)
+    return db_route
+
+
+@app.delete("/api/routes/{route_id}")
+def delete_route(route_id: int, db: Session = Depends(get_db)):
+    """Delete a route."""
+    db_route = db.query(Route).filter(Route.id == route_id).first()
+    if not db_route:
+        raise HTTPException(status_code=404, detail="Route not found")
+
+    db.delete(db_route)
+    db.commit()
+    return {"message": "Route deleted"}
