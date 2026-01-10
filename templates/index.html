@@ -130,8 +130,26 @@
 
         .popup-content h4 { margin-bottom: 8px; }
         .popup-content p { color: #666; font-size: 13px; margin-bottom: 4px; }
-        .popup-buttons { margin-top: 10px; display: flex; gap: 6px; }
-        .popup-buttons button { padding: 4px 10px; font-size: 12px; }
+        .popup-buttons { margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
+        .popup-buttons button, .popup-buttons a { padding: 4px 10px; font-size: 12px; }
+
+        /* Logs Modal */
+        .logs-modal .modal-content { max-width: 500px; max-height: 80vh; display: flex; flex-direction: column; }
+        .logs-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .logs-header h3 { margin: 0; }
+        .logs-search { margin-bottom: 12px; }
+        .logs-search input { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; }
+        .logs-list { flex: 1; overflow-y: auto; max-height: 300px; border: 1px solid #eee; border-radius: 8px; }
+        .log-item { padding: 12px; border-bottom: 1px solid #eee; }
+        .log-item:last-child { border-bottom: none; }
+        .log-item h4 { font-size: 14px; margin-bottom: 4px; color: #1e293b; }
+        .log-item p { font-size: 13px; color: #666; margin: 0; }
+        .log-item .log-meta { font-size: 11px; color: #999; margin-top: 4px; }
+        .log-empty { padding: 20px; text-align: center; color: #999; }
+        .btn-orange { background: #f97316; }
+        .btn-orange:hover { background: #ea580c; }
+        .add-log-form { margin-top: 12px; padding-top: 12px; border-top: 1px solid #eee; }
+        .add-log-form textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; min-height: 60px; margin-bottom: 8px; }
     </style>
 </head>
 <body>
@@ -181,6 +199,26 @@
                     <button type="submit" class="btn">Save</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Visit Logs Modal -->
+    <div id="logs-modal" class="modal logs-modal">
+        <div class="modal-content">
+            <div class="logs-header">
+                <h3 id="logs-title">Visit Logs</h3>
+                <button class="btn btn-secondary" style="width:auto;padding:6px 12px;" onclick="closeLogsModal()">Close</button>
+            </div>
+            <div class="logs-search">
+                <input type="text" id="logs-search-input" placeholder="Search logs..." oninput="searchLogs()">
+            </div>
+            <div id="logs-list" class="logs-list">
+                <div class="log-empty">No visits logged yet</div>
+            </div>
+            <div class="add-log-form">
+                <textarea id="new-log-notes" placeholder="Add notes about this visit (optional)..."></textarea>
+                <button class="btn btn-success" onclick="checkIn()">Check In</button>
+            </div>
         </div>
     </div>
 
@@ -309,6 +347,7 @@
                     ${location.notes ? `<p>📝 ${location.notes}</p>` : ''}
                     <div class="popup-buttons">
                         <a href="${directionsUrl}" target="_blank" class="btn btn-success" style="text-decoration:none;text-align:center;">Directions</a>
+                        <button class="btn btn-orange" onclick="openLogs(${location.id}, '${location.name.replace(/'/g, "\\'")}')">Logs</button>
                         <button class="btn" onclick="editLocation(${location.id})">Edit</button>
                         <button class="btn btn-danger" onclick="deleteLocation(${location.id})">Delete</button>
                     </div>
@@ -408,6 +447,62 @@
             closeModal();
             loadLocations();
         });
+
+        // --- Visit Logs ---
+        let currentLocationId = null;
+        let currentLocationName = '';
+
+        async function openLogs(locationId, locationName) {
+            currentLocationId = locationId;
+            currentLocationName = locationName;
+            document.getElementById('logs-title').textContent = `Logs: ${locationName}`;
+            document.getElementById('logs-search-input').value = '';
+            document.getElementById('new-log-notes').value = '';
+            await loadLogs();
+            document.getElementById('logs-modal').classList.add('active');
+        }
+
+        function closeLogsModal() {
+            document.getElementById('logs-modal').classList.remove('active');
+            currentLocationId = null;
+        }
+
+        async function loadLogs(search = '') {
+            const url = `/api/locations/${currentLocationId}/logs` + (search ? `?search=${encodeURIComponent(search)}` : '');
+            const response = await fetch(url);
+            const logs = await response.json();
+
+            const listEl = document.getElementById('logs-list');
+            if (logs.length === 0) {
+                listEl.innerHTML = '<div class="log-empty">No visits logged yet</div>';
+            } else {
+                listEl.innerHTML = logs.map(log => `
+                    <div class="log-item">
+                        <h4>${log.title}</h4>
+                        ${log.notes ? `<p>${log.notes}</p>` : '<p style="font-style:italic;">No notes</p>'}
+                        <div class="log-meta">${new Date(log.created_at).toLocaleString()}</div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        let searchLogsTimeout;
+        function searchLogs() {
+            clearTimeout(searchLogsTimeout);
+            const query = document.getElementById('logs-search-input').value;
+            searchLogsTimeout = setTimeout(() => loadLogs(query), 300);
+        }
+
+        async function checkIn() {
+            const notes = document.getElementById('new-log-notes').value.trim();
+            await fetch(`/api/locations/${currentLocationId}/logs`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ notes: notes || null })
+            });
+            document.getElementById('new-log-notes').value = '';
+            await loadLogs();
+        }
     </script>
 </body>
 </html>

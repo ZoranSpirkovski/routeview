@@ -8,7 +8,8 @@ from pydantic import BaseModel
 from typing import Optional
 
 from app.database import engine, get_db, Base
-from app.models import Location
+from app.models import Location, VisitLog
+from datetime import datetime
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -38,6 +39,21 @@ class LocationResponse(BaseModel):
     latitude: float
     longitude: float
     notes: Optional[str]
+
+    class Config:
+        from_attributes = True
+
+
+class VisitLogCreate(BaseModel):
+    notes: Optional[str] = None
+
+
+class VisitLogResponse(BaseModel):
+    id: int
+    location_id: int
+    title: str
+    notes: Optional[str]
+    created_at: datetime
 
     class Config:
         from_attributes = True
@@ -109,3 +125,51 @@ def delete_location(location_id: int, db: Session = Depends(get_db)):
 def health_check():
     """Health check endpoint for deployment."""
     return {"status": "healthy"}
+
+
+# --- Visit Log Endpoints ---
+
+@app.get("/api/locations/{location_id}/logs", response_model=list[VisitLogResponse])
+def get_visit_logs(location_id: int, search: Optional[str] = None, db: Session = Depends(get_db)):
+    """Get all visit logs for a location, newest first."""
+    query = db.query(VisitLog).filter(VisitLog.location_id == location_id)
+    if search:
+        query = query.filter(
+            (VisitLog.title.ilike(f"%{search}%")) |
+            (VisitLog.notes.ilike(f"%{search}%"))
+        )
+    return query.order_by(VisitLog.created_at.desc()).all()
+
+
+@app.post("/api/locations/{location_id}/logs", response_model=VisitLogResponse)
+def create_visit_log(location_id: int, log: VisitLogCreate, db: Session = Depends(get_db)):
+    """Create a visit log entry with auto-generated title."""
+    location = db.query(Location).filter(Location.id == location_id).first()
+    if not location:
+        raise HTTPException(status_code=404, detail="Location not found")
+
+    # Auto-generate title: "Visit - Jan 10, 2026 6:30 PM"
+    now = datetime.now()
+    title = f"Visit - {now.strftime('%b %d, %Y %I:%M %p')}"
+
+    db_log = VisitLog(
+        location_id=location_id,
+        title=title,
+        notes=log.notes
+    )
+    db.add(db_log)
+    db.commit()
+    db.refresh(db_log)
+    return db_log
+
+
+@app.delete("/api/logs/{log_id}")
+def delete_visit_log(log_id: int, db: Session = Depends(get_db)):
+    """Delete a visit log entry."""
+    db_log = db.query(VisitLog).filter(VisitLog.id == log_id).first()
+    if not db_log:
+        raise HTTPException(status_code=404, detail="Log not found")
+
+    db.delete(db_log)
+    db.commit()
+    return {"message": "Log deleted"}
