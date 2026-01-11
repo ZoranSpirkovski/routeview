@@ -5,7 +5,7 @@ from app.database import Base
 
 
 class Client(Base):
-    """A client/business that owns vending machine locations."""
+    """A client/business with a vending machine location (1 Client = 1 Location)."""
     __tablename__ = "clients"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -14,45 +14,33 @@ class Client(Base):
     contact_phone = Column(String(50), nullable=True)
     contact_email = Column(String(100), nullable=True)
     notes = Column(Text, nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-
-    locations = relationship("Location", back_populates="client")
-
-
-class Location(Base):
-    """A vending machine location."""
-    __tablename__ = "locations"
-
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(100), nullable=False)
+    # Location fields (merged from Location model)
     address = Column(String(255), nullable=True)
-    latitude = Column(Float, nullable=False)
-    longitude = Column(Float, nullable=False)
-    notes = Column(String(500), nullable=True)
-    client_id = Column(Integer, ForeignKey("clients.id"), nullable=True)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    client = relationship("Client", back_populates="locations")
-    visit_logs = relationship("VisitLog", back_populates="location", cascade="all, delete-orphan")
+    # Relationships
+    visit_logs = relationship("VisitLog", back_populates="client", cascade="all, delete-orphan")
+    route_clients = relationship("RouteClient", back_populates="client")
 
 
 class VisitLog(Base):
-    """A visit log entry for a location."""
+    """A visit log entry for a client location."""
     __tablename__ = "visit_logs"
 
     id = Column(Integer, primary_key=True, index=True)
-    location_id = Column(Integer, ForeignKey("locations.id"), nullable=False)
+    client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
     title = Column(String(200), nullable=False)
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    location = relationship("Location", back_populates="visit_logs")
+    client = relationship("Client", back_populates="visit_logs")
 
 
 class Route(Base):
-    """A route containing ordered locations."""
+    """A route containing ordered client locations."""
     __tablename__ = "routes"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -61,17 +49,17 @@ class Route(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    locations = relationship("RouteLocation", back_populates="route", cascade="all, delete-orphan", order_by="RouteLocation.position")
+    clients = relationship("RouteClient", back_populates="route", cascade="all, delete-orphan", order_by="RouteClient.position")
 
 
-class RouteLocation(Base):
-    """Junction table for route-location with ordering."""
-    __tablename__ = "route_locations"
+class RouteClient(Base):
+    """Junction table for route-client with ordering."""
+    __tablename__ = "route_clients"
 
     id = Column(Integer, primary_key=True, index=True)
     route_id = Column(Integer, ForeignKey("routes.id"), nullable=False)
-    location_id = Column(Integer, ForeignKey("locations.id"), nullable=False)
+    client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
     position = Column(Integer, nullable=False)
 
-    route = relationship("Route", back_populates="locations")
-    location = relationship("Location")
+    route = relationship("Route", back_populates="clients")
+    client = relationship("Client", back_populates="route_clients")
