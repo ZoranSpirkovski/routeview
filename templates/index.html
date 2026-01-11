@@ -120,11 +120,24 @@
         /* Pick on map button states */
         .btn-pick-map { background: #6366f1; }
         .btn-pick-map:hover { background: #4f46e5; }
-        .btn-pick-map.active { background: #dc2626; animation: pulse 1s infinite; }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
+
+        /* Floating cancel button when picking on map */
+        .pick-map-overlay {
+            display: none;
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2001;
+            background: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            text-align: center;
         }
+        .pick-map-overlay.active { display: block; }
+        .pick-map-overlay p { margin-bottom: 12px; font-weight: 500; }
+        .pick-map-overlay .btn { width: auto; margin: 0; }
 
         .coords-display {
             color: #666;
@@ -520,6 +533,12 @@
         </div>
     </div>
 
+    <!-- Pick on Map Overlay -->
+    <div id="pick-map-overlay" class="pick-map-overlay">
+        <p>Click on the map to set location</p>
+        <button class="btn btn-secondary" onclick="cancelPickOnMap()">Cancel</button>
+    </div>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         // Initialize map (centered on Europe - adjust as needed)
@@ -685,7 +704,9 @@
 
         function closeModal() {
             document.getElementById('modal').classList.remove('active');
-            cancelPickOnMap();
+            document.getElementById('pick-map-overlay').classList.remove('active');
+            isPickingOnMap = false;
+            map.getContainer().style.cursor = '';
             if (tempMarker) {
                 map.removeLayer(tempMarker);
                 tempMarker = null;
@@ -839,25 +860,19 @@
         function startPickOnMap() {
             isPickingOnMap = true;
             map.getContainer().style.cursor = 'crosshair';
-            document.getElementById('pick-map-btn').textContent = 'Click map now...';
-            document.getElementById('pick-map-btn').classList.add('active');
 
-            // Minimize modal on mobile to see map
-            if (window.innerWidth <= 600) {
-                document.getElementById('modal').style.display = 'none';
-            }
+            // Hide modal, show overlay
+            document.getElementById('modal').classList.remove('active');
+            document.getElementById('pick-map-overlay').classList.add('active');
         }
 
         function cancelPickOnMap() {
             isPickingOnMap = false;
             map.getContainer().style.cursor = '';
-            document.getElementById('pick-map-btn').textContent = 'Pick on Map';
-            document.getElementById('pick-map-btn').classList.remove('active');
 
-            // Restore modal on mobile
-            if (window.innerWidth <= 600) {
-                document.getElementById('modal').style.display = '';
-            }
+            // Hide overlay, show modal
+            document.getElementById('pick-map-overlay').classList.remove('active');
+            document.getElementById('modal').classList.add('active');
         }
 
         async function handleMapClick(e) {
@@ -887,13 +902,11 @@
                 // Ignore reverse geocode errors
             }
 
-            cancelPickOnMap();
-
-            // Restore modal on mobile
-            if (window.innerWidth <= 600) {
-                document.getElementById('modal').style.display = '';
-                document.getElementById('modal').classList.add('active');
-            }
+            // Hide overlay, show modal with filled data
+            isPickingOnMap = false;
+            map.getContainer().style.cursor = '';
+            document.getElementById('pick-map-overlay').classList.remove('active');
+            document.getElementById('modal').classList.add('active');
         }
 
         // --- Visit Logs ---
