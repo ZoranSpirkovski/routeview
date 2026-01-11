@@ -4,6 +4,22 @@ from sqlalchemy.sql import func
 from app.database import Base
 
 
+class Client(Base):
+    """A client/business that owns vending machine locations."""
+    __tablename__ = "clients"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    contact_name = Column(String(100), nullable=True)
+    contact_phone = Column(String(50), nullable=True)
+    contact_email = Column(String(100), nullable=True)
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    locations = relationship("Location", back_populates="client")
+
+
 class Location(Base):
     """A vending machine location."""
     __tablename__ = "locations"
@@ -14,9 +30,11 @@ class Location(Base):
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
     notes = Column(String(500), nullable=True)
+    client_id = Column(Integer, ForeignKey("clients.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
+    client = relationship("Client", back_populates="locations")
     visit_logs = relationship("VisitLog", back_populates="location", cascade="all, delete-orphan")
 
 

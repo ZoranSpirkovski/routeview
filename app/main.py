@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 from app.database import engine, get_db, Base
-from app.models import Location, VisitLog, Route, RouteLocation
+from app.models import Location, VisitLog, Route, RouteLocation, Client
 from datetime import datetime
 from typing import List
 
@@ -25,12 +25,33 @@ templates = Jinja2Templates(directory="templates")
 APP_PASSWORD = os.getenv("ROUTEVIEW_PASSWORD", "demo123")
 
 
+class ClientCreate(BaseModel):
+    name: str
+    contact_name: Optional[str] = None
+    contact_phone: Optional[str] = None
+    contact_email: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class ClientResponse(BaseModel):
+    id: int
+    name: str
+    contact_name: Optional[str]
+    contact_phone: Optional[str]
+    contact_email: Optional[str]
+    notes: Optional[str]
+
+    class Config:
+        from_attributes = True
+
+
 class LocationCreate(BaseModel):
     name: str
     address: Optional[str] = None
     latitude: float
     longitude: float
     notes: Optional[str] = None
+    client_id: Optional[int] = None
 
 
 class LocationResponse(BaseModel):
@@ -40,6 +61,8 @@ class LocationResponse(BaseModel):
     latitude: float
     longitude: float
     notes: Optional[str]
+    client_id: Optional[int]
+    client: Optional[ClientResponse] = None
 
     class Config:
         from_attributes = True
@@ -290,3 +313,72 @@ def delete_route(route_id: int, db: Session = Depends(get_db)):
     db.delete(db_route)
     db.commit()
     return {"message": "Route deleted"}
+
+
+# --- Client Endpoints ---
+
+@app.get("/api/clients")
+def get_clients(db: Session = Depends(get_db)):
+    """Get all clients with location count."""
+    clients = db.query(Client).all()
+    return [
+        {
+            "id": c.id,
+            "name": c.name,
+            "contact_name": c.contact_name,
+            "contact_phone": c.contact_phone,
+            "contact_email": c.contact_email,
+            "notes": c.notes,
+            "location_count": len(c.locations)
+        }
+        for c in clients
+    ]
+
+
+@app.post("/api/clients", response_model=ClientResponse)
+def create_client(client: ClientCreate, db: Session = Depends(get_db)):
+    """Create a new client."""
+    db_client = Client(**client.model_dump())
+    db.add(db_client)
+    db.commit()
+    db.refresh(db_client)
+    return db_client
+
+
+@app.get("/api/clients/{client_id}", response_model=ClientResponse)
+def get_client(client_id: int, db: Session = Depends(get_db)):
+    """Get a single client."""
+    client = db.query(Client).filter(Client.id == client_id).first()
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+    return client
+
+
+@app.put("/api/clients/{client_id}", response_model=ClientResponse)
+def update_client(client_id: int, client: ClientCreate, db: Session = Depends(get_db)):
+    """Update a client."""
+    db_client = db.query(Client).filter(Client.id == client_id).first()
+    if not db_client:
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    for key, value in client.model_dump().items():
+        setattr(db_client, key, value)
+
+    db.commit()
+    db.refresh(db_client)
+    return db_client
+
+
+@app.delete("/api/clients/{client_id}")
+def delete_client(client_id: int, db: Session = Depends(get_db)):
+    """Delete a client."""
+    db_client = db.query(Client).filter(Client.id == client_id).first()
+    if not db_client:
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    # Unlink locations (set client_id to null instead of deleting)
+    db.query(Location).filter(Location.client_id == client_id).update({"client_id": None})
+
+    db.delete(db_client)
+    db.commit()
+    return {"message": "Client deleted"}

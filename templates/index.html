@@ -332,6 +332,7 @@
         <div id="filter-results" class="search-results" style="display:none;"></div>
         <button class="btn" onclick="startAddLocation()">+ Add Location</button>
         <button class="btn btn-purple" onclick="openRoutesModal()">Routes</button>
+        <button class="btn btn-orange" onclick="openClientsModal()">Clients</button>
         <p class="location-count"><span id="count">0</span> locations</p>
     </div>
 
@@ -371,6 +372,12 @@
                 <div class="form-group">
                     <label>Notes</label>
                     <textarea id="location-notes" placeholder="e.g., Key under mat, busy on Mondays"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Client</label>
+                    <select id="location-client" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:14px;">
+                        <option value="">-- No Client --</option>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label>Coordinates</label>
@@ -438,6 +445,52 @@
             <div class="modal-buttons">
                 <button class="btn btn-secondary" onclick="closeRouteFormModal()">Cancel</button>
                 <button class="btn" onclick="saveRoute()">Save Route</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Clients Modal -->
+    <div id="clients-modal" class="modal">
+        <div class="modal-content" style="max-width:450px;">
+            <div class="logs-header">
+                <h3>Clients</h3>
+                <button class="btn btn-secondary" style="width:auto;padding:6px 12px;" onclick="closeClientsModal()">Close</button>
+            </div>
+            <button class="btn" onclick="openClientFormModal()">+ Add Client</button>
+            <div id="clients-list" class="route-list">
+                <div class="log-empty">No clients yet</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Client Form Modal -->
+    <div id="client-form-modal" class="modal">
+        <div class="modal-content" style="max-width:450px;">
+            <h3 id="client-form-title">Add Client</h3>
+            <input type="hidden" id="client-id">
+            <div class="form-group">
+                <label>Client/Business Name *</label>
+                <input type="text" id="client-name" placeholder="e.g., ABC Company">
+            </div>
+            <div class="form-group">
+                <label>Contact Name</label>
+                <input type="text" id="client-contact-name" placeholder="e.g., John Smith">
+            </div>
+            <div class="form-group">
+                <label>Phone</label>
+                <input type="text" id="client-phone" placeholder="e.g., +1 555-1234">
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="client-email" placeholder="e.g., john@example.com">
+            </div>
+            <div class="form-group">
+                <label>Notes</label>
+                <textarea id="client-notes" placeholder="Any additional notes..."></textarea>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closeClientFormModal()">Cancel</button>
+                <button class="btn" onclick="saveClient()">Save Client</button>
             </div>
         </div>
     </div>
@@ -592,6 +645,7 @@
             document.getElementById('location-name').value = '';
             document.getElementById('location-address').value = '';
             document.getElementById('location-notes').value = '';
+            document.getElementById('location-client').value = '';
             document.getElementById('coords-display').textContent =
                 `${e.latlng.lat.toFixed(6)}, ${e.latlng.lng.toFixed(6)}`;
 
@@ -621,6 +675,7 @@
             document.getElementById('location-name').value = location.name;
             document.getElementById('location-address').value = location.address || '';
             document.getElementById('location-notes').value = location.notes || '';
+            document.getElementById('location-client').value = location.client_id || '';
             document.getElementById('coords-display').textContent =
                 `${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}`;
 
@@ -638,12 +693,16 @@
             e.preventDefault();
 
             const id = document.getElementById('location-id').value;
+            const clientSelect = document.getElementById('location-client');
+            const clientId = clientSelect.value ? parseInt(clientSelect.value) : null;
+
             const data = {
                 name: document.getElementById('location-name').value,
                 address: document.getElementById('location-address').value || null,
                 latitude: parseFloat(document.getElementById('location-lat').value),
                 longitude: parseFloat(document.getElementById('location-lng').value),
-                notes: document.getElementById('location-notes').value || null
+                notes: document.getElementById('location-notes').value || null,
+                client_id: clientId
             };
 
             const url = id ? `/api/locations/${id}` : '/api/locations';
@@ -871,6 +930,112 @@
             activeRoute = null;
             currentStopIndex = 0;
         }
+
+        // --- Clients ---
+        let allClients = [];
+        let editingClientId = null;
+
+        async function loadClients() {
+            const response = await fetch('/api/clients');
+            allClients = await response.json();
+            updateClientDropdown();
+        }
+
+        function updateClientDropdown() {
+            const select = document.getElementById('location-client');
+            select.innerHTML = '<option value="">-- No Client --</option>' +
+                allClients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        }
+
+        async function openClientsModal() {
+            await loadClients();
+            renderClientsList();
+            document.getElementById('clients-modal').classList.add('active');
+        }
+
+        function closeClientsModal() {
+            document.getElementById('clients-modal').classList.remove('active');
+        }
+
+        function renderClientsList() {
+            const listEl = document.getElementById('clients-list');
+            if (allClients.length === 0) {
+                listEl.innerHTML = '<div class="log-empty">No clients yet</div>';
+            } else {
+                listEl.innerHTML = allClients.map(c => `
+                    <div class="route-item" onclick="editClient(${c.id})">
+                        <h4>${c.name}</h4>
+                        <small>${c.location_count} locations${c.contact_name ? ' • ' + c.contact_name : ''}</small>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function openClientFormModal() {
+            editingClientId = null;
+            document.getElementById('client-form-title').textContent = 'Add Client';
+            document.getElementById('client-id').value = '';
+            document.getElementById('client-name').value = '';
+            document.getElementById('client-contact-name').value = '';
+            document.getElementById('client-phone').value = '';
+            document.getElementById('client-email').value = '';
+            document.getElementById('client-notes').value = '';
+            closeClientsModal();
+            document.getElementById('client-form-modal').classList.add('active');
+        }
+
+        function closeClientFormModal() {
+            document.getElementById('client-form-modal').classList.remove('active');
+        }
+
+        async function editClient(clientId) {
+            const response = await fetch(`/api/clients/${clientId}`);
+            const client = await response.json();
+
+            editingClientId = clientId;
+            document.getElementById('client-form-title').textContent = 'Edit Client';
+            document.getElementById('client-id').value = client.id;
+            document.getElementById('client-name').value = client.name;
+            document.getElementById('client-contact-name').value = client.contact_name || '';
+            document.getElementById('client-phone').value = client.contact_phone || '';
+            document.getElementById('client-email').value = client.contact_email || '';
+            document.getElementById('client-notes').value = client.notes || '';
+
+            closeClientsModal();
+            document.getElementById('client-form-modal').classList.add('active');
+        }
+
+        async function saveClient() {
+            const name = document.getElementById('client-name').value.trim();
+            if (!name) {
+                alert('Please enter a client name');
+                return;
+            }
+
+            const data = {
+                name,
+                contact_name: document.getElementById('client-contact-name').value.trim() || null,
+                contact_phone: document.getElementById('client-phone').value.trim() || null,
+                contact_email: document.getElementById('client-email').value.trim() || null,
+                notes: document.getElementById('client-notes').value.trim() || null
+            };
+
+            const url = editingClientId ? `/api/clients/${editingClientId}` : '/api/clients';
+            const method = editingClientId ? 'PUT' : 'POST';
+
+            await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            closeClientFormModal();
+            await loadClients();
+            openClientsModal();
+        }
+
+        // Load clients on start
+        loadClients();
     </script>
 </body>
 </html>
