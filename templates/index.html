@@ -192,6 +192,128 @@
         .location-select-item:last-child { border-bottom: none; }
         .location-order { width: 24px; height: 24px; background: #e5e7eb; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; }
         .location-select-item.selected .location-order { background: #2563eb; color: white; }
+
+        /* Mobile Controls Toggle */
+        .controls-toggle {
+            display: none;
+            position: absolute;
+            top: 60px;
+            right: 10px;
+            z-index: 1000;
+            background: white;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 600px) {
+            .header { padding: 0 12px; }
+            .header h1 { font-size: 16px; }
+
+            .controls {
+                position: fixed;
+                top: 50px;
+                right: 0;
+                left: 0;
+                max-width: none;
+                border-radius: 0;
+                padding: 12px;
+                transform: translateY(-100%);
+                transition: transform 0.3s ease;
+            }
+            .controls.open { transform: translateY(0); }
+            .controls h2 { display: none; }
+
+            .controls-toggle { display: block; }
+            .controls-toggle.open { display: none; }
+
+            .btn {
+                padding: 14px 16px;
+                font-size: 16px;
+            }
+
+            .search-box input {
+                padding: 12px;
+                font-size: 16px;
+            }
+
+            /* Full-screen modals on mobile */
+            .modal-content {
+                width: 100%;
+                max-width: 100%;
+                height: 100%;
+                max-height: 100%;
+                border-radius: 0;
+                padding: 16px;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .logs-modal .modal-content,
+            .modal-content[style*="max-width:450px"] {
+                max-width: 100%;
+                max-height: 100%;
+            }
+
+            .logs-list { max-height: none; flex: 1; }
+            .location-select-list { max-height: none; flex: 1; }
+
+            .form-group input,
+            .form-group textarea {
+                padding: 12px;
+                font-size: 16px;
+            }
+
+            /* Route navigation - full width at bottom */
+            .route-nav {
+                left: 0;
+                right: 0;
+                bottom: 0;
+                transform: none;
+                border-radius: 16px 16px 0 0;
+                min-width: auto;
+                max-width: none;
+                padding: 16px;
+            }
+
+            .route-nav-buttons .btn {
+                padding: 14px;
+                font-size: 15px;
+            }
+
+            /* Bigger popup buttons */
+            .popup-buttons {
+                flex-direction: column;
+                gap: 8px;
+            }
+            .popup-buttons button,
+            .popup-buttons a {
+                padding: 10px 16px;
+                font-size: 14px;
+                width: 100%;
+                text-align: center;
+            }
+
+            /* Filter results */
+            .search-results {
+                position: fixed;
+                left: 12px;
+                right: 12px;
+                top: auto;
+                max-height: 50vh;
+            }
+        }
+
+        /* Tablet adjustments */
+        @media (min-width: 601px) and (max-width: 900px) {
+            .controls { max-width: 280px; }
+            .modal-content { max-width: 90%; }
+        }
     </style>
 </head>
 <body>
@@ -200,7 +322,9 @@
     </header>
     <div id="map"></div>
 
-    <div class="controls">
+    <button id="controls-toggle" class="controls-toggle" onclick="toggleControls()">Menu</button>
+
+    <div id="controls" class="controls">
         <h2>RouteView</h2>
         <div class="search-box">
             <input type="text" id="location-filter" placeholder="Filter locations..." oninput="filterLocations()">
@@ -331,6 +455,22 @@
         let tempMarker = null;
         let isAddingLocation = false;
         let allLocations = [];
+
+        // Mobile controls toggle
+        function toggleControls() {
+            const controls = document.getElementById('controls');
+            const toggle = document.getElementById('controls-toggle');
+            controls.classList.toggle('open');
+            toggle.classList.toggle('open');
+        }
+
+        // Close controls when clicking on map (mobile)
+        map.on('click', function() {
+            if (window.innerWidth <= 600) {
+                document.getElementById('controls').classList.remove('open');
+                document.getElementById('controls-toggle').classList.remove('open');
+            }
+        });
 
         // Load locations on start
         loadLocations();
