@@ -25,21 +25,183 @@
         }
         .header h1 { font-size: 18px; font-weight: 600; }
 
-        #map { height: calc(100vh - 50px); width: 100%; margin-top: 50px; }
-
-        .controls {
-            position: absolute;
-            top: 60px;
-            right: 10px;
-            z-index: 1000;
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            max-width: 300px;
+        #map {
+            height: calc(100vh - 50px);
+            margin-top: 50px;
+            margin-left: 320px;
+            width: calc(100% - 320px);
         }
 
-        .controls h2 { margin-bottom: 10px; font-size: 18px; }
+        /* Left Panel */
+        .left-panel {
+            position: fixed;
+            top: 50px;
+            left: 0;
+            bottom: 0;
+            width: 320px;
+            background: white;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .panel-header {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .mode-toggle {
+            display: flex;
+            gap: 4px;
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 4px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 10px 12px;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .mode-btn:hover { background: rgba(255,255,255,0.5); }
+        .mode-btn.active {
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            color: #2563eb;
+        }
+
+        .panel-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-search {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .panel-search input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .client-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+        }
+
+        .client-item {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border: 1px solid transparent;
+        }
+
+        .client-item:hover { background: #f9fafb; }
+        .client-item.highlighted {
+            background: #eff6ff;
+            border-color: #3b82f6;
+        }
+
+        .client-item-info { flex: 1; min-width: 0; }
+        .client-item-name { font-weight: 500; margin-bottom: 2px; }
+        .client-item-address { font-size: 12px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .client-item-last { font-size: 11px; color: #999; margin-top: 2px; }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .status-green { background: #22c55e; }
+        .status-orange { background: #f97316; }
+        .status-red { background: #ef4444; }
+        .status-never { background: #9ca3af; }
+
+        .panel-footer {
+            padding: 12px;
+            border-top: 1px solid #eee;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        /* Execution mode styles */
+        .exec-header {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+        .exec-header h4 { margin: 0 0 4px 0; }
+        .exec-header p { margin: 0; font-size: 13px; color: #666; }
+
+        .exec-actions {
+            padding: 12px;
+            border-top: 1px solid #eee;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .exec-actions textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            min-height: 60px;
+            resize: vertical;
+        }
+
+        /* Route stop items */
+        .route-stop {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border: 1px solid #eee;
+        }
+        .route-stop:hover { background: #f9fafb; }
+        .route-stop.current { background: #eff6ff; border-color: #3b82f6; }
+        .route-stop.completed { opacity: 0.6; }
+        .stop-number {
+            width: 28px;
+            height: 28px;
+            background: #e5e7eb;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        .route-stop.current .stop-number { background: #2563eb; color: white; }
+        .route-stop.completed .stop-number { background: #22c55e; color: white; }
+
+        .empty-state {
+            padding: 20px;
+            text-align: center;
+            color: #999;
+        }
 
         .btn {
             background: #2563eb;
@@ -50,38 +212,19 @@
             cursor: pointer;
             font-size: 14px;
             width: 100%;
-            margin-bottom: 8px;
+            margin-bottom: 0;
         }
         .btn:hover { background: #1d4ed8; }
         .btn-danger { background: #dc2626; }
         .btn-danger:hover { background: #b91c1c; }
         .btn-success { background: #16a34a; }
         .btn-success:hover { background: #15803d; }
-
-        .search-box {
-            margin-bottom: 10px;
-        }
-        .search-box input {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 14px;
-        }
-        .search-results {
-            max-height: 200px;
-            overflow-y: auto;
-            background: white;
-            border-radius: 6px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        .search-result-item {
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-            cursor: pointer;
-        }
-        .search-result-item:hover { background: #f3f4f6; }
-        .search-result-item:last-child { border-bottom: none; }
+        .btn-secondary { background: #6b7280; }
+        .btn-secondary:hover { background: #4b5563; }
+        .btn-purple { background: #7c3aed; }
+        .btn-purple:hover { background: #6d28d9; }
+        .btn-orange { background: #f97316; }
+        .btn-orange:hover { background: #ea580c; }
 
         /* Address autocomplete dropdown */
         .address-autocomplete {
@@ -148,12 +291,6 @@
             font-family: monospace;
         }
 
-        .client-count {
-            font-size: 14px;
-            color: #666;
-            margin-top: 10px;
-        }
-
         /* Modal */
         .modal {
             display: none;
@@ -192,8 +329,6 @@
 
         .modal-buttons { display: flex; gap: 8px; margin-top: 16px; }
         .modal-buttons .btn { flex: 1; margin-bottom: 0; }
-        .btn-secondary { background: #6b7280; }
-        .btn-secondary:hover { background: #4b5563; }
 
         .popup-content h4 { margin-bottom: 8px; }
         .popup-content p { color: #666; font-size: 13px; margin-bottom: 4px; }
@@ -213,43 +348,15 @@
         .log-item p { font-size: 13px; color: #666; margin: 0; }
         .log-item .log-meta { font-size: 11px; color: #999; margin-top: 4px; }
         .log-empty { padding: 20px; text-align: center; color: #999; }
-        .btn-orange { background: #f97316; }
-        .btn-orange:hover { background: #ea580c; }
         .add-log-form { margin-top: 12px; padding-top: 12px; border-top: 1px solid #eee; }
         .add-log-form textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; min-height: 60px; margin-bottom: 8px; }
 
         /* Routes */
-        .btn-purple { background: #7c3aed; }
-        .btn-purple:hover { background: #6d28d9; }
         .route-list { margin-top: 10px; }
         .route-item { padding: 10px; border: 1px solid #eee; border-radius: 6px; margin-bottom: 8px; cursor: pointer; }
         .route-item:hover { background: #f9fafb; }
         .route-item h4 { font-size: 14px; margin-bottom: 2px; }
         .route-item small { color: #666; }
-
-        /* Route Navigation Panel */
-        .route-nav {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: white;
-            padding: 16px 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
-            z-index: 1000;
-            display: none;
-            min-width: 320px;
-            max-width: 90%;
-        }
-        .route-nav.active { display: block; }
-        .route-nav-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .route-nav-header h4 { margin: 0; font-size: 16px; }
-        .route-nav-progress { font-size: 13px; color: #666; margin-bottom: 10px; }
-        .route-nav-location { font-weight: 600; margin-bottom: 8px; }
-        .route-nav-address { font-size: 13px; color: #666; margin-bottom: 12px; }
-        .route-nav-buttons { display: flex; gap: 8px; }
-        .route-nav-buttons .btn { flex: 1; margin: 0; padding: 12px; }
 
         /* Client selection for routes */
         .client-select-list { max-height: 250px; overflow-y: auto; border: 1px solid #eee; border-radius: 6px; margin-bottom: 12px; }
@@ -260,52 +367,40 @@
         .client-order { width: 24px; height: 24px; background: #e5e7eb; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; }
         .client-select-item.selected .client-order { background: #2563eb; color: white; }
 
-        /* Mobile Controls Toggle */
-        .controls-toggle {
+        /* Mobile toggle button */
+        .panel-toggle {
             display: none;
-            position: absolute;
-            top: 60px;
-            right: 10px;
-            z-index: 1000;
-            background: white;
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1001;
+            background: #2563eb;
+            color: white;
             border: none;
-            padding: 12px 16px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            cursor: pointer;
-            font-size: 14px;
+            padding: 14px 20px;
+            border-radius: 50px;
             font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            cursor: pointer;
         }
 
-        /* Mobile Responsive */
-        @media (max-width: 600px) {
+        /* Mobile: panel slides overlay */
+        @media (max-width: 768px) {
+            .left-panel {
+                width: 100%;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+            .left-panel.open { transform: translateX(0); }
+            #map { margin-left: 0; width: 100%; }
+
+            .panel-toggle { display: block; }
+
             .header { padding: 0 12px; }
             .header h1 { font-size: 16px; }
 
-            .controls {
-                position: fixed;
-                top: 50px;
-                right: 0;
-                left: 0;
-                max-width: none;
-                border-radius: 0;
-                padding: 12px;
-                transform: translateY(-100%);
-                transition: transform 0.3s ease;
-            }
-            .controls.open { transform: translateY(0); }
-            .controls h2 { display: none; }
-
-            .controls-toggle { display: block; }
-            .controls-toggle.open { display: none; }
-
             .btn {
                 padding: 14px 16px;
-                font-size: 16px;
-            }
-
-            .search-box input {
-                padding: 12px;
                 font-size: 16px;
             }
 
@@ -336,23 +431,6 @@
                 font-size: 16px;
             }
 
-            /* Route navigation - full width at bottom */
-            .route-nav {
-                left: 0;
-                right: 0;
-                bottom: 0;
-                transform: none;
-                border-radius: 16px 16px 0 0;
-                min-width: auto;
-                max-width: none;
-                padding: 16px;
-            }
-
-            .route-nav-buttons .btn {
-                padding: 14px;
-                font-size: 15px;
-            }
-
             /* Bigger popup buttons */
             .popup-buttons {
                 flex-direction: column;
@@ -366,15 +444,6 @@
                 text-align: center;
             }
 
-            /* Filter results */
-            .search-results {
-                position: fixed;
-                left: 12px;
-                right: 12px;
-                top: auto;
-                max-height: 50vh;
-            }
-
             /* Address autocomplete on mobile */
             .address-results {
                 position: fixed;
@@ -385,9 +454,12 @@
             }
         }
 
+        @media (min-width: 769px) {
+            .panel-toggle { display: none; }
+        }
+
         /* Tablet adjustments */
-        @media (min-width: 601px) and (max-width: 900px) {
-            .controls { max-width: 280px; }
+        @media (min-width: 769px) and (max-width: 900px) {
             .modal-content { max-width: 90%; }
         }
     </style>
@@ -398,34 +470,56 @@
     </header>
     <div id="map"></div>
 
-    <button id="controls-toggle" class="controls-toggle" onclick="toggleControls()">Menu</button>
-
-    <div id="controls" class="controls">
-        <h2>RouteView</h2>
-        <div class="search-box">
-            <input type="text" id="client-filter" placeholder="Filter clients..." oninput="filterClients()">
+    <!-- Left Panel -->
+    <div id="left-panel" class="left-panel">
+        <!-- Panel Header with Mode Toggle -->
+        <div class="panel-header">
+            <div class="mode-toggle">
+                <button class="mode-btn active" data-mode="planning" onclick="setMode('planning')">Planning</button>
+                <button class="mode-btn" data-mode="execution" onclick="setMode('execution')">Execution</button>
+            </div>
         </div>
-        <div id="filter-results" class="search-results" style="display:none;"></div>
-        <button class="btn" onclick="startAddClient()">+ Add Client</button>
-        <button class="btn btn-purple" onclick="openRoutesModal()">Routes</button>
-        <p class="client-count"><span id="count">0</span> clients</p>
+
+        <!-- Planning Mode Content -->
+        <div id="planning-content" class="panel-content">
+            <div class="panel-search">
+                <input type="text" id="client-search" placeholder="Search clients..." oninput="filterClientList()">
+            </div>
+            <div style="padding: 4px 12px; font-size: 12px; color: #666; display: flex; justify-content: space-between; align-items: center;">
+                <span>Showing <span id="count">0</span> clients</span>
+                <a href="#" id="show-all-link" style="color: #2563eb; text-decoration: none; display: none;" onclick="showAllClients(); return false;">Show all</a>
+            </div>
+            <div id="client-list" class="client-list">
+                <!-- Client items rendered here -->
+            </div>
+            <div class="panel-footer">
+                <button class="btn" onclick="startAddClient()">+ Add Client</button>
+                <button class="btn btn-purple" onclick="openRoutesModal()">Manage Routes</button>
+            </div>
+        </div>
+
+        <!-- Execution Mode Content -->
+        <div id="execution-content" class="panel-content" style="display:none;">
+            <div class="exec-header">
+                <h4 id="exec-route-name">No route selected</h4>
+                <p id="exec-route-progress"></p>
+            </div>
+            <div id="route-stops-list" class="client-list">
+                <!-- Route stops rendered here -->
+            </div>
+            <div class="exec-actions" id="exec-actions" style="display:none;">
+                <textarea id="exec-checkin-notes" placeholder="Check-in notes (optional)..."></textarea>
+                <button class="btn btn-success" onclick="checkInFromPanel()">Check In</button>
+                <a id="exec-directions-btn" href="#" target="_blank" class="btn btn-purple" style="text-decoration:none;text-align:center;">Get Directions</a>
+            </div>
+            <div class="panel-footer">
+                <button class="btn btn-secondary" onclick="exitRouteExecution()">Exit Route</button>
+            </div>
+        </div>
     </div>
 
-    <!-- Route Navigation Panel -->
-    <div id="route-nav" class="route-nav">
-        <div class="route-nav-header">
-            <h4 id="route-nav-title">Route Name</h4>
-            <button class="btn btn-secondary" style="width:auto;padding:6px 12px;" onclick="exitRoute()">Exit</button>
-        </div>
-        <div class="route-nav-progress">Stop <span id="route-current">1</span> of <span id="route-total">5</span></div>
-        <div id="route-nav-client" class="route-nav-location">Client Name</div>
-        <div id="route-nav-address" class="route-nav-address">Address here</div>
-        <div class="route-nav-buttons">
-            <button class="btn btn-secondary" onclick="prevStop()">Previous</button>
-            <a id="route-directions-btn" href="#" target="_blank" class="btn btn-success" style="text-decoration:none;text-align:center;">Directions</a>
-            <button class="btn" onclick="nextStop()">Next</button>
-        </div>
-    </div>
+    <!-- Mobile Panel Toggle -->
+    <button class="panel-toggle" onclick="togglePanel()">Menu</button>
 
     <!-- Add/Edit Client Modal -->
     <div id="modal" class="modal">
@@ -541,11 +635,24 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+        // App state management
+        let appState = {
+            mode: 'planning',
+            clientsWithStatus: [],
+            filteredClients: [],
+            highlightedClientId: null,
+            activeRoute: null,
+            currentStopIndex: 0,
+            completedStops: []
+        };
+
         // Initialize map (centered on Europe - adjust as needed)
         const map = L.map('map').setView([41.9981, 21.4254], 8);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20
         }).addTo(map);
 
         let clientMarkers = {};
@@ -554,19 +661,54 @@
         let allClients = [];
         let addressSearchTimeout = null;
 
-        // Mobile controls toggle
-        function toggleControls() {
-            const controls = document.getElementById('controls');
-            const toggle = document.getElementById('controls-toggle');
-            controls.classList.toggle('open');
-            toggle.classList.toggle('open');
+        // Color-coded markers based on service status
+        function getStatusColor(status) {
+            const colors = {
+                green: '#22c55e',
+                orange: '#f97316',
+                red: '#ef4444',
+                never: '#9ca3af'
+            };
+            return colors[status] || colors.never;
         }
 
-        // Close controls when clicking on map (mobile) and handle pick on map
+        function createColoredMarker(client) {
+            const color = getStatusColor(client.service_status);
+
+            return L.circleMarker([client.latitude, client.longitude], {
+                radius: 10,
+                fillColor: color,
+                color: '#fff',
+                weight: 2,
+                opacity: 1,
+                fillOpacity: 0.9
+            });
+        }
+
+        function highlightClientInList(clientId) {
+            appState.highlightedClientId = clientId;
+
+            // Update visual highlight in list
+            document.querySelectorAll('.client-item').forEach(el => {
+                el.classList.toggle('highlighted', el.dataset.id == clientId);
+            });
+
+            // Scroll into view
+            const element = document.querySelector(`.client-item[data-id="${clientId}"]`);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        // Mobile panel toggle
+        function togglePanel() {
+            document.getElementById('left-panel').classList.toggle('open');
+        }
+
+        // Close panel when clicking on map (mobile)
         map.on('click', function(e) {
-            if (window.innerWidth <= 600) {
-                document.getElementById('controls').classList.remove('open');
-                document.getElementById('controls-toggle').classList.remove('open');
+            if (window.innerWidth <= 768) {
+                document.getElementById('left-panel').classList.remove('open');
             }
 
             // Handle pick on map mode
@@ -575,95 +717,198 @@
             }
         });
 
-        // Load clients on start
-        loadClients();
+        // Mode switching
+        function setMode(mode) {
+            appState.mode = mode;
 
-        // Filter existing clients
-        function filterClients() {
-            const query = document.getElementById('client-filter').value.toLowerCase().trim();
-            const resultsEl = document.getElementById('filter-results');
+            // Update toggle buttons
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.mode === mode);
+            });
 
-            if (query.length < 2) {
-                resultsEl.style.display = 'none';
+            // Show/hide content
+            document.getElementById('planning-content').style.display = mode === 'planning' ? 'flex' : 'none';
+            document.getElementById('execution-content').style.display = mode === 'execution' ? 'flex' : 'none';
+
+            // If switching to execution and no route, show route selection
+            if (mode === 'execution' && !appState.activeRoute) {
+                openRoutesModal();
+            }
+        }
+
+        // Load clients with status on start
+        loadClientsWithStatus();
+
+        // Load clients with service status
+        async function loadClientsWithStatus() {
+            try {
+                const response = await fetch('/api/clients/with-status');
+                appState.clientsWithStatus = await response.json();
+                appState.filteredClients = [...appState.clientsWithStatus];
+                allClients = appState.clientsWithStatus;
+                renderClientList();
+                renderMarkers();
+                setupMapSync(); // Initialize bidirectional sync after clients are loaded
+            } catch (err) {
+                // Fallback to regular clients endpoint
+                const response = await fetch('/api/clients');
+                const clients = await response.json();
+                appState.clientsWithStatus = clients.map(c => ({
+                    ...c,
+                    service_status: 'never',
+                    last_serviced: null
+                }));
+                appState.filteredClients = [...appState.clientsWithStatus];
+                allClients = appState.clientsWithStatus;
+                renderClientList();
+                renderMarkers();
+                setupMapSync(); // Initialize bidirectional sync after clients are loaded
+            }
+        }
+
+        // Render client list in left panel
+        function renderClientList() {
+            const listEl = document.getElementById('client-list');
+            const clients = appState.filteredClients;
+
+            if (clients.length === 0) {
+                listEl.innerHTML = '<div class="empty-state">No clients found</div>';
                 return;
             }
 
-            const matches = allClients.filter(client =>
+            listEl.innerHTML = clients.map(client => `
+                <div class="client-item ${appState.highlightedClientId === client.id ? 'highlighted' : ''}"
+                     data-id="${client.id}"
+                     onclick="handleClientClick(${client.id})">
+                    <div class="status-dot status-${client.service_status || 'never'}"></div>
+                    <div class="client-item-info">
+                        <div class="client-item-name">${client.name}</div>
+                        <div class="client-item-address">${client.address || 'No address'}</div>
+                        <div class="client-item-last">${formatLastServiced(client.last_serviced)}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function formatLastServiced(dateString) {
+            if (!dateString) return 'Never serviced';
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+
+            if (diffDays === 0) return 'Serviced today';
+            if (diffDays === 1) return 'Serviced yesterday';
+            if (diffDays < 7) return `Serviced ${diffDays} days ago`;
+            if (diffDays < 30) return `Serviced ${Math.floor(diffDays / 7)} weeks ago`;
+            return `Serviced ${Math.floor(diffDays / 30)} months ago`;
+        }
+
+        // Filter client list in left panel
+        function filterClientList() {
+            const query = document.getElementById('client-search').value.toLowerCase().trim();
+
+            if (query.length === 0) {
+                // If no search, show clients in viewport
+                filterClientsByViewport();
+                return;
+            }
+
+            // If searching, search ALL clients (not just viewport)
+            appState.filteredClients = appState.clientsWithStatus.filter(client =>
                 client.name.toLowerCase().includes(query) ||
                 (client.address && client.address.toLowerCase().includes(query)) ||
                 (client.contact_name && client.contact_name.toLowerCase().includes(query))
-            ).slice(0, 5);
+            );
 
-            if (matches.length === 0) {
-                resultsEl.innerHTML = '<div class="search-result-item">No matches</div>';
-            } else {
-                resultsEl.innerHTML = matches.map(client => `
-                    <div class="search-result-item" onclick="goToClient(${client.id})">
-                        <strong>${client.name}</strong><br>
-                        <small style="color:#666;">${client.address || 'No address'}</small>
-                    </div>
-                `).join('');
+            renderClientList();
+
+            // Update count
+            const countEl = document.getElementById('count');
+            if (countEl) {
+                countEl.textContent = `${appState.filteredClients.length} matches`;
             }
-            resultsEl.style.display = 'block';
-        }
 
-        function goToClient(id) {
-            document.getElementById('filter-results').style.display = 'none';
-            document.getElementById('client-filter').value = '';
-            const client = allClients.find(c => c.id === id);
-            if (client && client.latitude && client.longitude) {
-                map.flyTo([client.latitude, client.longitude], 16);
-                setTimeout(() => clientMarkers[id]?.openPopup(), 500);
+            // Hide "Show all" link when searching
+            const showAllLink = document.getElementById('show-all-link');
+            if (showAllLink) {
+                showAllLink.style.display = 'none';
             }
         }
 
-        // Close filter results when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.controls')) {
-                document.getElementById('filter-results').style.display = 'none';
-            }
-            // Close address results when clicking outside
-            if (!e.target.closest('.address-autocomplete')) {
-                document.getElementById('address-results').classList.remove('active');
-            }
-        });
+        // Handle client click in left panel
+        function handleClientClick(clientId) {
+            const client = appState.clientsWithStatus.find(c => c.id === clientId);
+            if (!client || !client.latitude || !client.longitude) return;
 
-        async function loadClients() {
-            const response = await fetch('/api/clients');
-            const clients = await response.json();
-            allClients = clients;
+            // Highlight in list
+            highlightClientInList(clientId);
 
+            // Pan map to client with smooth animation
+            map.flyTo([client.latitude, client.longitude], 16, { duration: 0.5 });
+
+            // Open popup after animation completes
+            setTimeout(() => {
+                if (clientMarkers[clientId]) {
+                    clientMarkers[clientId].openPopup();
+                }
+            }, 600);
+
+            // Close mobile panel
+            if (window.innerWidth <= 768) {
+                document.getElementById('left-panel').classList.remove('open');
+            }
+        }
+
+        // Render markers on map
+        function renderMarkers() {
             // Clear existing markers
             Object.values(clientMarkers).forEach(m => map.removeLayer(m));
             clientMarkers = {};
 
-            // Only add markers for clients with coordinates
-            clients.filter(c => c.latitude && c.longitude).forEach(client => {
-                addMarker(client);
+            // Add markers for clients with coordinates
+            const clientsWithCoords = appState.clientsWithStatus.filter(c => c.latitude && c.longitude);
+
+            clientsWithCoords.forEach(client => {
+                const marker = createColoredMarker(client);
+                marker.addTo(map);
+                marker.bindPopup(createPopupContent(client));
+
+                // Sync marker click with list
+                marker.on('click', () => {
+                    highlightClientInList(client.id);
+                });
+
+                clientMarkers[client.id] = marker;
             });
 
-            document.getElementById('count').textContent = clients.length;
-
-            // Fit bounds if there are clients with coordinates
-            const clientsWithCoords = clients.filter(c => c.latitude && c.longitude);
+            // Fit bounds if there are clients
             if (clientsWithCoords.length > 0) {
                 const bounds = L.latLngBounds(clientsWithCoords.map(c => [c.latitude, c.longitude]));
                 map.fitBounds(bounds, { padding: [50, 50] });
             }
-        }
 
-        function addMarker(client) {
-            const marker = L.marker([client.latitude, client.longitude])
-                .addTo(map)
-                .bindPopup(createPopupContent(client));
-            clientMarkers[client.id] = marker;
+            // Update count
+            document.getElementById('count')?.textContent = appState.clientsWithStatus.length;
         }
 
         function createPopupContent(client) {
             const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${client.latitude},${client.longitude}`;
+            const statusColor = getStatusColor(client.service_status);
+            const statusLabel = {
+                green: 'Recently serviced',
+                orange: 'Due soon',
+                red: 'Overdue',
+                never: 'Never serviced'
+            }[client.service_status] || 'Never serviced';
+
             return `
                 <div class="popup-content">
                     <h4>${client.name}</h4>
+                    <p style="margin-bottom:6px;">
+                        <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${statusColor};margin-right:6px;"></span>
+                        <strong>${statusLabel}</strong>
+                        ${client.last_serviced ? ` - ${formatLastServiced(client.last_serviced)}` : ''}
+                    </p>
                     ${client.address ? `<p style="margin-bottom:4px;">${client.address}</p>` : ''}
                     ${client.contact_name ? `<p style="margin-bottom:2px;"><strong>Contact:</strong> ${client.contact_name}</p>` : ''}
                     ${client.contact_phone ? `<p style="margin-bottom:2px;"><strong>Phone:</strong> <a href="tel:${client.contact_phone}">${client.contact_phone}</a></p>` : ''}
@@ -679,7 +924,14 @@
             `;
         }
 
-        // Open Add Client modal directly (no alert)
+        // Close address results when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.address-autocomplete')) {
+                document.getElementById('address-results').classList.remove('active');
+            }
+        });
+
+        // Open Add Client modal directly
         function startAddClient() {
             document.getElementById('modal-title').textContent = 'Add Client';
             document.getElementById('client-id').value = '';
@@ -745,7 +997,7 @@
             if (!confirm('Delete this client?')) return;
 
             await fetch(`/api/clients/${id}`, { method: 'DELETE' });
-            loadClients();
+            loadClientsWithStatus();
         }
 
         document.getElementById('client-form').addEventListener('submit', async (e) => {
@@ -781,7 +1033,7 @@
             });
 
             closeModal();
-            loadClients();
+            loadClientsWithStatus();
         });
 
         // --- Address Autocomplete with Nominatim ---
@@ -963,13 +1215,44 @@
             });
             document.getElementById('new-log-notes').value = '';
             await loadLogs();
+            // Refresh clients to update service status
+            loadClientsWithStatus();
+        }
+
+        // Check in from execution panel
+        async function checkInFromPanel() {
+            if (!appState.activeRoute) return;
+
+            const stop = appState.activeRoute.clients[appState.currentStopIndex];
+            const client = stop.client;
+            const notes = document.getElementById('exec-checkin-notes').value.trim();
+
+            await fetch(`/api/clients/${client.id}/logs`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ notes: notes || null })
+            });
+
+            document.getElementById('exec-checkin-notes').value = '';
+
+            // Mark stop as completed
+            appState.completedStops.push(appState.currentStopIndex);
+
+            // Move to next stop if available
+            if (appState.currentStopIndex < appState.activeRoute.clients.length - 1) {
+                appState.currentStopIndex++;
+                updateExecutionPanel();
+            } else {
+                alert('Route complete! All stops visited.');
+            }
+
+            // Refresh clients to update service status
+            loadClientsWithStatus();
         }
 
         // --- Routes ---
         let selectedClientIds = [];
         let editingRouteId = null;
-        let activeRoute = null;
-        let currentStopIndex = 0;
 
         async function openRoutesModal() {
             await loadRoutes();
@@ -991,7 +1274,7 @@
                 listEl.innerHTML = routes.map(r => `
                     <div class="route-item" onclick="startRoute(${r.id})">
                         <h4>${r.name}</h4>
-                        <small>${r.client_count} stops${r.description ? ' • ' + r.description : ''}</small>
+                        <small>${r.client_count} stops${r.description ? ' - ' + r.description : ''}</small>
                     </div>
                 `).join('');
             }
@@ -1073,55 +1356,164 @@
 
         async function startRoute(routeId) {
             const response = await fetch(`/api/routes/${routeId}`);
-            activeRoute = await response.json();
-            currentStopIndex = 0;
+            appState.activeRoute = await response.json();
+            appState.currentStopIndex = 0;
+            appState.completedStops = [];
 
-            if (activeRoute.clients.length === 0) {
+            if (appState.activeRoute.clients.length === 0) {
                 alert('This route has no clients');
                 return;
             }
 
             closeRoutesModal();
-            updateRouteNav();
-            document.getElementById('route-nav').classList.add('active');
+            setMode('execution');
+            updateExecutionPanel();
         }
 
-        function updateRouteNav() {
-            const stop = activeRoute.clients[currentStopIndex];
-            const client = stop.client;
+        function updateExecutionPanel() {
+            if (!appState.activeRoute) return;
 
-            document.getElementById('route-nav-title').textContent = activeRoute.name;
-            document.getElementById('route-current').textContent = currentStopIndex + 1;
-            document.getElementById('route-total').textContent = activeRoute.clients.length;
-            document.getElementById('route-nav-client').textContent = client.name;
-            document.getElementById('route-nav-address').textContent = client.address || 'No address';
-            document.getElementById('route-directions-btn').href =
+            const route = appState.activeRoute;
+            const currentIndex = appState.currentStopIndex;
+
+            document.getElementById('exec-route-name').textContent = route.name;
+            document.getElementById('exec-route-progress').textContent =
+                `Stop ${currentIndex + 1} of ${route.clients.length}`;
+
+            // Render stops list
+            const stopsListEl = document.getElementById('route-stops-list');
+            stopsListEl.innerHTML = route.clients.map((stop, idx) => {
+                const client = stop.client;
+                const isCompleted = appState.completedStops.includes(idx);
+                const isCurrent = idx === currentIndex;
+
+                return `
+                    <div class="route-stop ${isCurrent ? 'current' : ''} ${isCompleted ? 'completed' : ''}"
+                         onclick="goToStop(${idx})">
+                        <div class="stop-number">${isCompleted ? '&#10003;' : idx + 1}</div>
+                        <div class="client-item-info">
+                            <div class="client-item-name">${client.name}</div>
+                            <div class="client-item-address">${client.address || 'No address'}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Show actions for current stop
+            const actionsEl = document.getElementById('exec-actions');
+            actionsEl.style.display = 'flex';
+
+            // Update directions link
+            const currentStop = route.clients[currentIndex];
+            const client = currentStop.client;
+            document.getElementById('exec-directions-btn').href =
                 `https://www.google.com/maps/dir/?api=1&destination=${client.latitude},${client.longitude}`;
 
+            // Pan to current stop
             map.flyTo([client.latitude, client.longitude], 16);
             setTimeout(() => clientMarkers[client.id]?.openPopup(), 500);
         }
 
-        function prevStop() {
-            if (currentStopIndex > 0) {
-                currentStopIndex--;
-                updateRouteNav();
+        function goToStop(idx) {
+            appState.currentStopIndex = idx;
+            updateExecutionPanel();
+        }
+
+        function exitRouteExecution() {
+            appState.activeRoute = null;
+            appState.currentStopIndex = 0;
+            appState.completedStops = [];
+            document.getElementById('exec-actions').style.display = 'none';
+            document.getElementById('exec-route-name').textContent = 'No route selected';
+            document.getElementById('exec-route-progress').textContent = '';
+            document.getElementById('route-stops-list').innerHTML = '<div class="empty-state">Select a route to start</div>';
+            setMode('planning');
+        }
+
+        // --- Bidirectional Map-List Sync ---
+        let mapMoveTimeout = null;
+        let mapSyncInitialized = false;
+
+        function setupMapSync() {
+            // Only set up once
+            if (mapSyncInitialized) return;
+            mapSyncInitialized = true;
+
+            map.on('moveend', handleMapMove);
+            map.on('zoomend', handleMapMove);
+        }
+
+        function handleMapMove() {
+            // Skip if in execution mode or if user is searching
+            if (appState.mode === 'execution') return;
+            const searchQuery = document.getElementById('client-search')?.value?.trim();
+            if (searchQuery && searchQuery.length > 0) return;
+
+            // Debounce to avoid excessive updates
+            clearTimeout(mapMoveTimeout);
+            mapMoveTimeout = setTimeout(() => {
+                filterClientsByViewport();
+            }, 150);
+        }
+
+        function filterClientsByViewport() {
+            const bounds = map.getBounds();
+
+            // Filter clients to those visible in current viewport
+            appState.filteredClients = appState.clientsWithStatus.filter(client => {
+                if (!client.latitude || !client.longitude) return false;
+                return bounds.contains([client.latitude, client.longitude]);
+            });
+
+            // Re-render the client list
+            renderClientList();
+
+            // Update the count to show filtered/total
+            const countEl = document.getElementById('count');
+            const showAllLink = document.getElementById('show-all-link');
+
+            if (countEl) {
+                const total = appState.clientsWithStatus.length;
+                const visible = appState.filteredClients.length;
+                countEl.textContent = visible === total ? total : `${visible} of ${total}`;
+            }
+
+            // Show/hide "Show all" link
+            if (showAllLink) {
+                const total = appState.clientsWithStatus.length;
+                const visible = appState.filteredClients.length;
+                showAllLink.style.display = visible < total ? 'inline' : 'none';
             }
         }
 
-        function nextStop() {
-            if (currentStopIndex < activeRoute.clients.length - 1) {
-                currentStopIndex++;
-                updateRouteNav();
-            } else {
-                alert('Route complete!');
+        function showAllClients() {
+            // Clear search input
+            const searchInput = document.getElementById('client-search');
+            if (searchInput) {
+                searchInput.value = '';
             }
-        }
 
-        function exitRoute() {
-            document.getElementById('route-nav').classList.remove('active');
-            activeRoute = null;
-            currentStopIndex = 0;
+            appState.filteredClients = [...appState.clientsWithStatus];
+            renderClientList();
+
+            // Fit map to all clients
+            const clientsWithCoords = appState.clientsWithStatus.filter(c => c.latitude && c.longitude);
+            if (clientsWithCoords.length > 0) {
+                const bounds = L.latLngBounds(clientsWithCoords.map(c => [c.latitude, c.longitude]));
+                map.fitBounds(bounds, { padding: [50, 50] });
+            }
+
+            // Update count
+            const countEl = document.getElementById('count');
+            if (countEl) {
+                countEl.textContent = appState.clientsWithStatus.length;
+            }
+
+            // Hide "Show all" link
+            const showAllLink = document.getElementById('show-all-link');
+            if (showAllLink) {
+                showAllLink.style.display = 'none';
+            }
         }
     </script>
 </body>

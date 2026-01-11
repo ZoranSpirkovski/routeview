@@ -63,3 +63,13 @@ class RouteClient(Base):
 
     route = relationship("Route", back_populates="clients")
     client = relationship("Client", back_populates="route_clients")
+
+
+class Setting(Base):
+    """Application settings stored as key-value pairs."""
+    __tablename__ = "settings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    key = Column(String(100), unique=True, nullable=False, index=True)
+    value = Column(Text, nullable=False)  # JSON-encoded for complex values
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
