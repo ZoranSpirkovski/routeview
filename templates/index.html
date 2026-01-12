@@ -1066,6 +1066,8 @@
             activeRoute: null,
             currentStopIndex: 0,
             completedStops: [],
+            // Map state
+            initialMapLoad: true,
             // Auth state
             user: null,
             token: null,
@@ -1668,10 +1670,11 @@
                 clientMarkers[client.id] = marker;
             });
 
-            // Fit bounds if there are clients
-            if (clientsWithCoords.length > 0) {
+            // Fit bounds only on initial page load, not after adding/editing clients
+            if (clientsWithCoords.length > 0 && appState.initialMapLoad) {
                 const bounds = L.latLngBounds(clientsWithCoords.map(c => [c.latitude, c.longitude]));
                 map.fitBounds(bounds, { padding: [50, 50] });
+                appState.initialMapLoad = false;
             }
 
             // Update count
