@@ -1519,6 +1519,9 @@
         async function loadClientsWithStatus() {
             try {
                 const response = await authenticatedFetch('/api/clients/with-status');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
                 appState.clientsWithStatus = await response.json();
                 appState.filteredClients = [...appState.clientsWithStatus];
                 allClients = appState.clientsWithStatus;
@@ -1526,9 +1529,13 @@
                 renderMarkers();
                 setupMapSync(); // Initialize bidirectional sync after clients are loaded
             } catch (err) {
+                console.error('Failed to load clients with status:', err);
                 // Fallback to regular clients endpoint
                 try {
                     const response = await authenticatedFetch('/api/clients');
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
                     const clients = await response.json();
                     appState.clientsWithStatus = clients.map(c => ({
                         ...c,
@@ -1541,7 +1548,7 @@
                     renderMarkers();
                     setupMapSync(); // Initialize bidirectional sync after clients are loaded
                 } catch (fallbackErr) {
-                    console.error('Failed to load clients:', fallbackErr);
+                    console.error('Failed to load clients (fallback):', fallbackErr);
                 }
             }
         }
@@ -1807,13 +1814,32 @@
             const url = id ? `/api/clients/${id}` : '/api/clients';
             const method = id ? 'PUT' : 'POST';
 
-            await authenticatedFetch(url, {
-                method,
-                body: JSON.stringify(data)
-            });
+            try {
+                const response = await authenticatedFetch(url, {
+                    method,
+                    body: JSON.stringify(data)
+                });
 
-            closeModal();
-            loadClientsWithStatus();
+                if (!response.ok) {
+                    let errorMessage = `Server error: ${response.status}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.detail || errorData.message || JSON.stringify(errorData);
+                    } catch (parseErr) {
+                        // Response wasn't JSON, use status text
+                        errorMessage = `${response.status}: ${response.statusText}`;
+                    }
+                    console.error('Client save failed:', errorMessage, { status: response.status, data });
+                    alert(`Failed to save client: ${errorMessage}`);
+                    return;
+                }
+
+                closeModal();
+                loadClientsWithStatus();
+            } catch (err) {
+                console.error('Client save error:', err, { data });
+                alert(`Failed to save client: ${err.message}`);
+            }
         });
 
         // --- Address Autocomplete with Nominatim ---
