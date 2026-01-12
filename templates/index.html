@@ -1673,7 +1673,7 @@
             // Fit bounds only on initial page load, not after adding/editing clients
             if (clientsWithCoords.length > 0 && appState.initialMapLoad) {
                 const bounds = L.latLngBounds(clientsWithCoords.map(c => [c.latitude, c.longitude]));
-                map.fitBounds(bounds, { padding: [50, 50] });
+                map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
                 appState.initialMapLoad = false;
             }
 
@@ -2306,7 +2306,7 @@
             const clientsWithCoords = appState.clientsWithStatus.filter(c => c.latitude && c.longitude);
             if (clientsWithCoords.length > 0) {
                 const bounds = L.latLngBounds(clientsWithCoords.map(c => [c.latitude, c.longitude]));
-                map.fitBounds(bounds, { padding: [50, 50] });
+                map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
             }
 
             // Update count
