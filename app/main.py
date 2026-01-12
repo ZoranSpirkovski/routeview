@@ -1,6 +1,14 @@
 import os
 import json
+import logging
 from fastapi import FastAPI, Depends, HTTPException, Request, Form, Query
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -1028,11 +1036,18 @@ def get_clients_with_status(db: Session = Depends(get_db), current_user: User = 
 @app.post("/api/clients", response_model=ClientResponse)
 def create_client(client: ClientCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """Create a new client with location."""
-    db_client = Client(**client.model_dump())
-    db.add(db_client)
-    db.commit()
-    db.refresh(db_client)
-    return db_client
+    try:
+        logger.info(f"Creating client: name='{client.name}', user_id={current_user.id}")
+        db_client = Client(**client.model_dump())
+        db.add(db_client)
+        db.commit()
+        db.refresh(db_client)
+        logger.info(f"Client created successfully: id={db_client.id}, name='{db_client.name}'")
+        return db_client
+    except Exception as e:
+        logger.error(f"Failed to create client: {e}", exc_info=True)
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to create client: {str(e)}")
 
 
 @app.get("/api/clients/{client_id}", response_model=ClientResponse)
@@ -1047,31 +1062,52 @@ def get_client(client_id: int, db: Session = Depends(get_db), current_user: User
 @app.put("/api/clients/{client_id}", response_model=ClientResponse)
 def update_client(client_id: int, client: ClientCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """Update a client."""
-    db_client = db.query(Client).filter(Client.id == client_id).first()
-    if not db_client:
-        raise HTTPException(status_code=404, detail="Client not found")
+    try:
+        logger.info(f"Updating client: id={client_id}, user_id={current_user.id}")
+        db_client = db.query(Client).filter(Client.id == client_id).first()
+        if not db_client:
+            logger.warning(f"Client not found for update: id={client_id}")
+            raise HTTPException(status_code=404, detail="Client not found")
 
-    for key, value in client.model_dump().items():
-        setattr(db_client, key, value)
+        for key, value in client.model_dump().items():
+            setattr(db_client, key, value)
 
-    db.commit()
-    db.refresh(db_client)
-    return db_client
+        db.commit()
+        db.refresh(db_client)
+        logger.info(f"Client updated successfully: id={db_client.id}")
+        return db_client
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to update client {client_id}: {e}", exc_info=True)
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to update client: {str(e)}")
 
 
 @app.delete("/api/clients/{client_id}")
 def delete_client(client_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_admin)):
     """Delete a client and all associated data (admin only)."""
-    db_client = db.query(Client).filter(Client.id == client_id).first()
-    if not db_client:
-        raise HTTPException(status_code=404, detail="Client not found")
+    try:
+        logger.info(f"Deleting client: id={client_id}, admin_id={current_user.id}")
+        db_client = db.query(Client).filter(Client.id == client_id).first()
+        if not db_client:
+            logger.warning(f"Client not found for deletion: id={client_id}")
+            raise HTTPException(status_code=404, detail="Client not found")
 
-    # Remove from any routes
-    db.query(RouteClient).filter(RouteClient.client_id == client_id).delete()
+        client_name = db_client.name
+        # Remove from any routes
+        db.query(RouteClient).filter(RouteClient.client_id == client_id).delete()
 
-    db.delete(db_client)
-    db.commit()
-    return {"message": "Client deleted"}
+        db.delete(db_client)
+        db.commit()
+        logger.info(f"Client deleted successfully: id={client_id}, name='{client_name}'")
+        return {"message": "Client deleted"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to delete client {client_id}: {e}", exc_info=True)
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to delete client: {str(e)}")
 
 
 # --- Location Endpoints (Backward Compatibility Alias) ---
