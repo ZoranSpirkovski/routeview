@@ -1430,6 +1430,7 @@
         let clientMarkers = {};
         let tempMarker = null;
         let isPickingOnMap = false;
+        let savedMapView = null; // Save map state before modal opens
         let allClients = [];
         let addressSearchTimeout = null;
 
@@ -1724,6 +1725,12 @@
 
         // Open Add Client modal directly
         function startAddClient() {
+            // Save current map view to restore after modal closes
+            savedMapView = {
+                center: map.getCenter(),
+                zoom: map.getZoom()
+            };
+
             document.getElementById('modal-title').textContent = 'Add Client';
             document.getElementById('client-id').value = '';
             document.getElementById('client-lat').value = '';
@@ -1754,9 +1761,20 @@
                 map.removeLayer(tempMarker);
                 tempMarker = null;
             }
+            // Restore map to original position before modal was opened
+            if (savedMapView) {
+                map.setView(savedMapView.center, savedMapView.zoom, { animate: false });
+                savedMapView = null;
+            }
         }
 
         async function editClient(id) {
+            // Save current map view to restore after modal closes
+            savedMapView = {
+                center: map.getCenter(),
+                zoom: map.getZoom()
+            };
+
             const response = await authenticatedFetch(`/api/clients/${id}`);
             const client = await response.json();
 
