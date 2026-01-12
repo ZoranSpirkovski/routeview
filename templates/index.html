@@ -1675,8 +1675,9 @@
             if (clientsWithCoords.length > 0 && appState.initialMapLoad) {
                 const bounds = L.latLngBounds(clientsWithCoords.map(c => [c.latitude, c.longitude]));
                 map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
-                appState.initialMapLoad = false;
             }
+            // Always mark initial load as complete after first render
+            appState.initialMapLoad = false;
 
             // Update count
             const countEl = document.getElementById('count');
