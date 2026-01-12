@@ -462,11 +462,141 @@
         @media (min-width: 769px) and (max-width: 900px) {
             .modal-content { max-width: 90%; }
         }
+
+        /* Schedule Calendar Styles */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            margin-top: 12px;
+        }
+        .calendar-header {
+            text-align: center;
+            font-weight: 600;
+            font-size: 12px;
+            color: #666;
+            padding: 8px 4px;
+        }
+        .calendar-day {
+            min-height: 60px;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            padding: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            position: relative;
+        }
+        .calendar-day:hover { background: #f9fafb; }
+        .calendar-day.other-month { background: #f9fafb; color: #999; }
+        .calendar-day.today { border-color: #2563eb; border-width: 2px; }
+        .calendar-day.selected { background: #eff6ff; border-color: #3b82f6; }
+        .day-number {
+            font-weight: 500;
+            font-size: 13px;
+            margin-bottom: 2px;
+        }
+        .day-assignments {
+            font-size: 10px;
+            overflow: hidden;
+        }
+        .day-assignment {
+            background: #dbeafe;
+            border-radius: 2px;
+            padding: 2px 4px;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .day-assignment.completed { background: #dcfce7; }
+        .day-assignment.in_progress { background: #fef3c7; }
+
+        .calendar-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+        }
+        .calendar-nav h4 { margin: 0; }
+        .calendar-nav button {
+            background: transparent;
+            border: 1px solid #ddd;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .calendar-nav button:hover { background: #f3f4f6; }
+
+        /* Template list styles */
+        .template-item {
+            padding: 12px;
+            border: 1px solid #eee;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .template-item:hover { background: #f9fafb; }
+        .template-info h4 { font-size: 14px; margin-bottom: 4px; }
+        .template-info small { color: #666; }
+        .template-actions { display: flex; gap: 6px; flex-shrink: 0; }
+        .template-actions button { padding: 4px 8px; font-size: 12px; width: auto; }
+
+        .schedule-days-tags {
+            display: flex;
+            gap: 4px;
+            margin-top: 4px;
+            flex-wrap: wrap;
+        }
+        .schedule-day-tag {
+            background: #e5e7eb;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+
+        /* Assignment form styles */
+        .assignment-form {
+            padding: 12px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            margin-top: 12px;
+            background: #f9fafb;
+        }
+        .assignment-form h5 { margin: 0 0 12px 0; }
+        .selected-dates {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: 8px;
+        }
+        .selected-date-tag {
+            background: #dbeafe;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .selected-date-tag button {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            font-size: 14px;
+            line-height: 1;
+        }
     </style>
 </head>
 <body>
     <header class="header">
         <h1>RouteView</h1>
+        <div id="user-info" style="margin-left:auto;display:none;align-items:center;gap:12px;">
+            <span id="user-name" style="font-size:14px;"></span>
+            <button onclick="logout()" style="background:transparent;border:1px solid rgba(255,255,255,0.3);color:white;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:12px;">Logout</button>
+        </div>
     </header>
     <div id="map"></div>
 
@@ -495,6 +625,8 @@
             <div class="panel-footer">
                 <button class="btn" onclick="startAddClient()">+ Add Client</button>
                 <button class="btn btn-purple" onclick="openRoutesModal()">Manage Routes</button>
+                <button class="btn btn-orange" data-admin-only style="display:none;" onclick="openScheduleModal()">Schedule</button>
+                <button class="btn btn-secondary" data-admin-only style="display:none;" onclick="openUsersModal()">Manage Users</button>
             </div>
         </div>
 
@@ -513,6 +645,7 @@
                 <a id="exec-directions-btn" href="#" target="_blank" class="btn btn-purple" style="text-decoration:none;text-align:center;">Get Directions</a>
             </div>
             <div class="panel-footer">
+                <button class="btn btn-orange" onclick="openMyAssignmentsModal()">My Assignments</button>
                 <button class="btn btn-secondary" onclick="exitRouteExecution()">Exit Route</button>
             </div>
         </div>
@@ -592,12 +725,15 @@
 
     <!-- Routes Modal -->
     <div id="routes-modal" class="modal">
-        <div class="modal-content" style="max-width:450px;">
+        <div class="modal-content" style="max-width:500px;">
             <div class="logs-header">
                 <h3>Routes</h3>
                 <button class="btn btn-secondary" style="width:auto;padding:6px 12px;" onclick="closeRoutesModal()">Close</button>
             </div>
-            <button class="btn" onclick="openCreateRouteModal()">+ Create New Route</button>
+            <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+                <button class="btn" onclick="openCreateRouteModal()">+ Create Route</button>
+                <button class="btn btn-purple" onclick="openTemplatesModal()">Templates</button>
+            </div>
             <div id="routes-list" class="route-list">
                 <div class="log-empty">No routes yet</div>
             </div>
@@ -627,6 +763,292 @@
         </div>
     </div>
 
+    <!-- Login Modal -->
+    <div id="login-modal" class="modal">
+        <div class="modal-content" style="max-width:400px;">
+            <h3>Login to RouteView</h3>
+            <form id="login-form">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="login-email" required placeholder="your@email.com">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="login-password" required placeholder="Your password">
+                </div>
+                <div id="login-error" style="color:#ef4444;font-size:13px;margin-bottom:8px;display:none;"></div>
+                <button type="submit" class="btn" style="width:100%;">Login</button>
+            </form>
+            <p style="margin-top:12px;text-align:center;font-size:13px;color:#666;">
+                Have an invite code? <a href="#" onclick="showRegisterScreen();return false;" style="color:#2563eb;">Register here</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div id="register-modal" class="modal">
+        <div class="modal-content" style="max-width:400px;">
+            <h3>Create Account</h3>
+            <form id="register-form">
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" id="register-name" required placeholder="Your name">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="register-email" required placeholder="your@email.com">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="register-password" required placeholder="Choose a password" minlength="6">
+                </div>
+                <div class="form-group">
+                    <label>Invite Code</label>
+                    <input type="text" id="register-invite" required placeholder="Enter your invite code">
+                </div>
+                <div id="register-error" style="color:#ef4444;font-size:13px;margin-bottom:8px;display:none;"></div>
+                <button type="submit" class="btn" style="width:100%;">Create Account</button>
+            </form>
+            <p style="margin-top:12px;text-align:center;font-size:13px;color:#666;">
+                Already have an account? <a href="#" onclick="showLoginScreen();return false;" style="color:#2563eb;">Login here</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- User Management Modal (Admin) -->
+    <div id="users-modal" class="modal">
+        <div class="modal-content" style="max-width:500px;">
+            <div class="logs-header">
+                <h3>User Management</h3>
+                <button class="btn btn-secondary" style="width:auto;padding:6px 12px;" onclick="closeUsersModal()">Close</button>
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:12px;">
+                <button class="btn" onclick="openCreateUserModal()">+ Add User</button>
+                <button class="btn btn-secondary" onclick="openInviteCodesModal()">Invite Codes</button>
+            </div>
+            <div id="users-list" class="route-list">
+                <div class="log-empty">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create User Modal (Admin) -->
+    <div id="create-user-modal" class="modal">
+        <div class="modal-content" style="max-width:400px;">
+            <h3>Create User</h3>
+            <form id="create-user-form">
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" id="new-user-name" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="new-user-email" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="new-user-password" required minlength="6">
+                </div>
+                <div class="form-group">
+                    <label>Role</label>
+                    <select id="new-user-role" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:6px;">
+                        <option value="member">Member</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" class="btn btn-secondary" onclick="closeCreateUserModal()">Cancel</button>
+                    <button type="submit" class="btn">Create User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Invite Codes Modal (Admin) -->
+    <div id="invite-codes-modal" class="modal">
+        <div class="modal-content" style="max-width:450px;">
+            <div class="logs-header">
+                <h3>Invite Codes</h3>
+                <button class="btn btn-secondary" style="width:auto;padding:6px 12px;" onclick="closeInviteCodesModal()">Close</button>
+            </div>
+            <button class="btn" onclick="generateInviteCode()">+ Generate Code</button>
+            <div id="invite-codes-list" class="route-list" style="margin-top:12px;">
+                <div class="log-empty">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Route Templates Modal -->
+    <div id="templates-modal" class="modal">
+        <div class="modal-content" style="max-width:500px;">
+            <div class="logs-header">
+                <h3>Route Templates</h3>
+                <button class="btn btn-secondary" style="width:auto;padding:6px 12px;" onclick="closeTemplatesModal()">Close</button>
+            </div>
+            <button class="btn" onclick="openCreateTemplateModal()">+ Create Template</button>
+            <div id="templates-list" class="route-list" style="margin-top:12px;">
+                <div class="log-empty">No templates yet</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create/Edit Template Modal -->
+    <div id="template-form-modal" class="modal">
+        <div class="modal-content" style="max-width:450px;">
+            <h3 id="template-form-title">Create Template</h3>
+            <div class="form-group">
+                <label>Template Name *</label>
+                <input type="text" id="template-name" placeholder="e.g., Monday Downtown Route">
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <input type="text" id="template-description" placeholder="e.g., Weekly route for downtown clients">
+            </div>
+            <div class="form-group">
+                <label>Schedule Days (optional)</label>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
+                    <label style="display:flex;align-items:center;gap:4px;font-weight:normal;">
+                        <input type="checkbox" class="schedule-day-checkbox" value="0"> Mon
+                    </label>
+                    <label style="display:flex;align-items:center;gap:4px;font-weight:normal;">
+                        <input type="checkbox" class="schedule-day-checkbox" value="1"> Tue
+                    </label>
+                    <label style="display:flex;align-items:center;gap:4px;font-weight:normal;">
+                        <input type="checkbox" class="schedule-day-checkbox" value="2"> Wed
+                    </label>
+                    <label style="display:flex;align-items:center;gap:4px;font-weight:normal;">
+                        <input type="checkbox" class="schedule-day-checkbox" value="3"> Thu
+                    </label>
+                    <label style="display:flex;align-items:center;gap:4px;font-weight:normal;">
+                        <input type="checkbox" class="schedule-day-checkbox" value="4"> Fri
+                    </label>
+                    <label style="display:flex;align-items:center;gap:4px;font-weight:normal;">
+                        <input type="checkbox" class="schedule-day-checkbox" value="5"> Sat
+                    </label>
+                    <label style="display:flex;align-items:center;gap:4px;font-weight:normal;">
+                        <input type="checkbox" class="schedule-day-checkbox" value="6"> Sun
+                    </label>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Select Clients (click in order)</label>
+                <div id="template-client-select-list" class="client-select-list"></div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closeTemplateFormModal()">Cancel</button>
+                <button class="btn" onclick="saveTemplate()">Save Template</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Save Route As Template Modal -->
+    <div id="save-template-modal" class="modal">
+        <div class="modal-content" style="max-width:400px;">
+            <h3>Save as Template</h3>
+            <div class="form-group">
+                <label>Template Name</label>
+                <input type="text" id="save-template-name" placeholder="Enter template name">
+            </div>
+            <div class="form-group">
+                <label>Schedule Days (optional)</label>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
+                    <label style="display:flex;align-items:center;gap:4px;font-weight:normal;">
+                        <input type="checkbox" class="save-template-day" value="0"> Mon
+                    </label>
+                    <label style="display:flex;align-items:center;gap:4px;font-weight:normal;">
+                        <input type="checkbox" class="save-template-day" value="1"> Tue
+                    </label>
+                    <label style="display:flex;align-items:center;gap:4px;font-weight:normal;">
+                        <input type="checkbox" class="save-template-day" value="2"> Wed
+                    </label>
+                    <label style="display:flex;align-items:center;gap:4px;font-weight:normal;">
+                        <input type="checkbox" class="save-template-day" value="3"> Thu
+                    </label>
+                    <label style="display:flex;align-items:center;gap:4px;font-weight:normal;">
+                        <input type="checkbox" class="save-template-day" value="4"> Fri
+                    </label>
+                    <label style="display:flex;align-items:center;gap:4px;font-weight:normal;">
+                        <input type="checkbox" class="save-template-day" value="5"> Sat
+                    </label>
+                    <label style="display:flex;align-items:center;gap:4px;font-weight:normal;">
+                        <input type="checkbox" class="save-template-day" value="6"> Sun
+                    </label>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closeSaveTemplateModal()">Cancel</button>
+                <button class="btn" onclick="confirmSaveAsTemplate()">Save Template</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Schedule Modal -->
+    <div id="schedule-modal" class="modal">
+        <div class="modal-content" style="max-width:700px;">
+            <div class="logs-header">
+                <h3>Schedule</h3>
+                <button class="btn btn-secondary" style="width:auto;padding:6px 12px;" onclick="closeScheduleModal()">Close</button>
+            </div>
+            <div class="calendar-nav">
+                <button onclick="prevMonth()">&larr; Prev</button>
+                <h4 id="calendar-month-title">January 2026</h4>
+                <button onclick="nextMonth()">Next &rarr;</button>
+            </div>
+            <div class="calendar-grid">
+                <div class="calendar-header">Mon</div>
+                <div class="calendar-header">Tue</div>
+                <div class="calendar-header">Wed</div>
+                <div class="calendar-header">Thu</div>
+                <div class="calendar-header">Fri</div>
+                <div class="calendar-header">Sat</div>
+                <div class="calendar-header">Sun</div>
+            </div>
+            <div id="calendar-days" class="calendar-grid" style="grid-template-columns: repeat(7, 1fr);"></div>
+            <div id="assignment-form" class="assignment-form" style="display:none;">
+                <h5>Assign Route</h5>
+                <div class="form-group">
+                    <label>Route</label>
+                    <select id="assign-route-select" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:6px;">
+                        <option value="">Select a route...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>User</label>
+                    <select id="assign-user-select" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:6px;">
+                        <option value="">Select a user...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Selected Dates</label>
+                    <div id="selected-dates" class="selected-dates">
+                        <span style="color:#666;font-size:13px;">Click calendar days to select</span>
+                    </div>
+                </div>
+                <div class="modal-buttons">
+                    <button class="btn btn-secondary" onclick="clearScheduleSelection()">Clear</button>
+                    <button class="btn" onclick="createAssignments()">Assign Route</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- My Assignments Modal -->
+    <div id="my-assignments-modal" class="modal">
+        <div class="modal-content" style="max-width:450px;">
+            <div class="logs-header">
+                <h3>My Assignments</h3>
+                <button class="btn btn-secondary" style="width:auto;padding:6px 12px;" onclick="closeMyAssignmentsModal()">Close</button>
+            </div>
+            <div class="form-group">
+                <label>Date</label>
+                <input type="date" id="assignments-date" onchange="loadMyAssignments()">
+            </div>
+            <div id="my-assignments-list" class="route-list" style="margin-top:12px;">
+                <div class="log-empty">No assignments</div>
+            </div>
+        </div>
+    </div>
+
     <!-- Pick on Map Overlay -->
     <div id="pick-map-overlay" class="pick-map-overlay">
         <p>Click on the map to set location</p>
@@ -643,8 +1065,356 @@
             highlightedClientId: null,
             activeRoute: null,
             currentStopIndex: 0,
-            completedStops: []
+            completedStops: [],
+            // Auth state
+            user: null,
+            token: null,
+            isAuthenticated: false
         };
+
+        // --- Auth Functions ---
+
+        function getToken() {
+            return localStorage.getItem('routeview_token');
+        }
+
+        function setToken(token) {
+            localStorage.setItem('routeview_token', token);
+            appState.token = token;
+        }
+
+        function clearToken() {
+            localStorage.removeItem('routeview_token');
+            appState.token = null;
+            appState.user = null;
+            appState.isAuthenticated = false;
+        }
+
+        function authHeaders() {
+            const token = getToken();
+            return token ? { 'Authorization': `Bearer ${token}` } : {};
+        }
+
+        async function authenticatedFetch(url, options = {}) {
+            const headers = {
+                'Content-Type': 'application/json',
+                ...options.headers,
+                ...authHeaders()
+            };
+
+            const response = await fetch(url, { ...options, headers });
+
+            if (response.status === 401) {
+                clearToken();
+                showLoginScreen();
+                throw new Error('Authentication required');
+            }
+
+            return response;
+        }
+
+        async function checkAuth() {
+            const token = getToken();
+            if (!token) {
+                showLoginScreen();
+                return false;
+            }
+
+            try {
+                const response = await fetch('/api/auth/me', {
+                    headers: authHeaders()
+                });
+
+                if (response.ok) {
+                    appState.user = await response.json();
+                    appState.isAuthenticated = true;
+                    updateUserUI();
+                    return true;
+                } else {
+                    clearToken();
+                    showLoginScreen();
+                    return false;
+                }
+            } catch (err) {
+                clearToken();
+                showLoginScreen();
+                return false;
+            }
+        }
+
+        function showLoginScreen() {
+            document.getElementById('login-modal').classList.add('active');
+            document.getElementById('register-modal').classList.remove('active');
+        }
+
+        function showRegisterScreen() {
+            document.getElementById('login-modal').classList.remove('active');
+            document.getElementById('register-modal').classList.add('active');
+        }
+
+        function hideAuthScreens() {
+            document.getElementById('login-modal').classList.remove('active');
+            document.getElementById('register-modal').classList.remove('active');
+        }
+
+        function updateUserUI() {
+            const userInfo = document.getElementById('user-info');
+            const userName = document.getElementById('user-name');
+
+            if (appState.isAuthenticated && appState.user) {
+                userName.textContent = `${appState.user.name} (${appState.user.role})`;
+                userInfo.style.display = 'flex';
+                updateAdminFeatures();
+            } else {
+                userInfo.style.display = 'none';
+            }
+        }
+
+        function updateAdminFeatures() {
+            const isAdmin = appState.user?.role === 'admin';
+            document.querySelectorAll('[data-admin-only]').forEach(el => {
+                el.style.display = isAdmin ? '' : 'none';
+            });
+        }
+
+        function logout() {
+            clearToken();
+            showLoginScreen();
+        }
+
+        // Login form handler
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const errorEl = document.getElementById('login-error');
+            errorEl.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: document.getElementById('login-email').value,
+                        password: document.getElementById('login-password').value
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    setToken(data.access_token);
+                    appState.user = data.user;
+                    appState.isAuthenticated = true;
+                    hideAuthScreens();
+                    updateUserUI();
+                    loadClientsWithStatus();
+                } else {
+                    const error = await response.json();
+                    errorEl.textContent = error.detail || 'Login failed';
+                    errorEl.style.display = 'block';
+                }
+            } catch (err) {
+                errorEl.textContent = 'Connection error. Please try again.';
+                errorEl.style.display = 'block';
+            }
+        });
+
+        // Register form handler
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const errorEl = document.getElementById('register-error');
+            errorEl.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: document.getElementById('register-name').value,
+                        email: document.getElementById('register-email').value,
+                        password: document.getElementById('register-password').value,
+                        invite_code: document.getElementById('register-invite').value
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    setToken(data.access_token);
+                    appState.user = data.user;
+                    appState.isAuthenticated = true;
+                    hideAuthScreens();
+                    updateUserUI();
+                    loadClientsWithStatus();
+                } else {
+                    const error = await response.json();
+                    errorEl.textContent = error.detail || 'Registration failed';
+                    errorEl.style.display = 'block';
+                }
+            } catch (err) {
+                errorEl.textContent = 'Connection error. Please try again.';
+                errorEl.style.display = 'block';
+            }
+        });
+
+        // --- Admin Functions ---
+
+        async function openUsersModal() {
+            await loadUsers();
+            document.getElementById('users-modal').classList.add('active');
+        }
+
+        function closeUsersModal() {
+            document.getElementById('users-modal').classList.remove('active');
+        }
+
+        async function loadUsers() {
+            try {
+                const response = await authenticatedFetch('/api/users');
+                const users = await response.json();
+
+                const listEl = document.getElementById('users-list');
+                if (users.length === 0) {
+                    listEl.innerHTML = '<div class="log-empty">No users found</div>';
+                } else {
+                    listEl.innerHTML = users.map(u => `
+                        <div class="route-item" style="cursor:default;">
+                            <h4>${u.name} ${u.id === appState.user.id ? '(you)' : ''}</h4>
+                            <small>${u.email} - ${u.role} ${u.is_active ? '' : '(inactive)'}</small>
+                            ${u.id !== appState.user.id ? `
+                                <div style="margin-top:8px;">
+                                    <button class="btn btn-secondary" style="width:auto;padding:4px 8px;font-size:12px;"
+                                        onclick="toggleUserActive(${u.id}, ${!u.is_active})">
+                                        ${u.is_active ? 'Deactivate' : 'Activate'}
+                                    </button>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `).join('');
+                }
+            } catch (err) {
+                console.error('Failed to load users:', err);
+            }
+        }
+
+        async function toggleUserActive(userId, active) {
+            try {
+                await authenticatedFetch(`/api/users/${userId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ is_active: active })
+                });
+                loadUsers();
+            } catch (err) {
+                console.error('Failed to update user:', err);
+            }
+        }
+
+        function openCreateUserModal() {
+            document.getElementById('new-user-name').value = '';
+            document.getElementById('new-user-email').value = '';
+            document.getElementById('new-user-password').value = '';
+            document.getElementById('new-user-role').value = 'member';
+            closeUsersModal();
+            document.getElementById('create-user-modal').classList.add('active');
+        }
+
+        function closeCreateUserModal() {
+            document.getElementById('create-user-modal').classList.remove('active');
+        }
+
+        document.getElementById('create-user-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            try {
+                const response = await authenticatedFetch('/api/users', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        name: document.getElementById('new-user-name').value,
+                        email: document.getElementById('new-user-email').value,
+                        password: document.getElementById('new-user-password').value,
+                        role: document.getElementById('new-user-role').value
+                    })
+                });
+
+                if (response.ok) {
+                    closeCreateUserModal();
+                    openUsersModal();
+                } else {
+                    const error = await response.json();
+                    alert(error.detail || 'Failed to create user');
+                }
+            } catch (err) {
+                alert('Error creating user');
+            }
+        });
+
+        // --- Invite Codes ---
+
+        function openInviteCodesModal() {
+            closeUsersModal();
+            loadInviteCodes();
+            document.getElementById('invite-codes-modal').classList.add('active');
+        }
+
+        function closeInviteCodesModal() {
+            document.getElementById('invite-codes-modal').classList.remove('active');
+        }
+
+        async function loadInviteCodes() {
+            try {
+                const response = await authenticatedFetch('/api/invite-codes');
+                const codes = await response.json();
+
+                const listEl = document.getElementById('invite-codes-list');
+                if (codes.length === 0) {
+                    listEl.innerHTML = '<div class="log-empty">No invite codes</div>';
+                } else {
+                    listEl.innerHTML = codes.map(c => {
+                        const isExpired = new Date(c.expires_at) < new Date();
+                        const isUsed = c.used_by !== null;
+                        return `
+                            <div class="route-item" style="cursor:default;">
+                                <h4 style="font-family:monospace;">${c.code}</h4>
+                                <small>
+                                    ${isUsed ? 'Used' : isExpired ? 'Expired' : `Expires: ${new Date(c.expires_at).toLocaleDateString()}`}
+                                </small>
+                                ${!isUsed ? `
+                                    <button class="btn btn-danger" style="width:auto;padding:4px 8px;font-size:12px;margin-top:8px;"
+                                        onclick="deleteInviteCode(${c.id})">Delete</button>
+                                ` : ''}
+                            </div>
+                        `;
+                    }).join('');
+                }
+            } catch (err) {
+                console.error('Failed to load invite codes:', err);
+            }
+        }
+
+        async function generateInviteCode() {
+            try {
+                const response = await authenticatedFetch('/api/invite-codes', {
+                    method: 'POST',
+                    body: JSON.stringify({ expires_in_days: 7 })
+                });
+
+                if (response.ok) {
+                    const code = await response.json();
+                    alert(`New invite code: ${code.code}\n\nShare this with the person you want to invite.`);
+                    loadInviteCodes();
+                }
+            } catch (err) {
+                alert('Error generating invite code');
+            }
+        }
+
+        async function deleteInviteCode(codeId) {
+            if (!confirm('Delete this invite code?')) return;
+
+            try {
+                await authenticatedFetch(`/api/invite-codes/${codeId}`, { method: 'DELETE' });
+                loadInviteCodes();
+            } catch (err) {
+                alert('Error deleting invite code');
+            }
+        }
 
         // Initialize map (centered on Europe - adjust as needed)
         const map = L.map('map').setView([41.9981, 21.4254], 8);
@@ -736,13 +1506,19 @@
             }
         }
 
-        // Load clients with status on start
-        loadClientsWithStatus();
+        // Initialize app - check auth first
+        async function initApp() {
+            const isAuthenticated = await checkAuth();
+            if (isAuthenticated) {
+                loadClientsWithStatus();
+            }
+        }
+        initApp();
 
         // Load clients with service status
         async function loadClientsWithStatus() {
             try {
-                const response = await fetch('/api/clients/with-status');
+                const response = await authenticatedFetch('/api/clients/with-status');
                 appState.clientsWithStatus = await response.json();
                 appState.filteredClients = [...appState.clientsWithStatus];
                 allClients = appState.clientsWithStatus;
@@ -751,18 +1527,22 @@
                 setupMapSync(); // Initialize bidirectional sync after clients are loaded
             } catch (err) {
                 // Fallback to regular clients endpoint
-                const response = await fetch('/api/clients');
-                const clients = await response.json();
-                appState.clientsWithStatus = clients.map(c => ({
-                    ...c,
-                    service_status: 'never',
-                    last_serviced: null
-                }));
-                appState.filteredClients = [...appState.clientsWithStatus];
-                allClients = appState.clientsWithStatus;
-                renderClientList();
-                renderMarkers();
-                setupMapSync(); // Initialize bidirectional sync after clients are loaded
+                try {
+                    const response = await authenticatedFetch('/api/clients');
+                    const clients = await response.json();
+                    appState.clientsWithStatus = clients.map(c => ({
+                        ...c,
+                        service_status: 'never',
+                        last_serviced: null
+                    }));
+                    appState.filteredClients = [...appState.clientsWithStatus];
+                    allClients = appState.clientsWithStatus;
+                    renderClientList();
+                    renderMarkers();
+                    setupMapSync(); // Initialize bidirectional sync after clients are loaded
+                } catch (fallbackErr) {
+                    console.error('Failed to load clients:', fallbackErr);
+                }
             }
         }
 
@@ -967,7 +1747,7 @@
         }
 
         async function editClient(id) {
-            const response = await fetch(`/api/clients/${id}`);
+            const response = await authenticatedFetch(`/api/clients/${id}`);
             const client = await response.json();
 
             document.getElementById('modal-title').textContent = 'Edit Client';
@@ -997,7 +1777,7 @@
         async function deleteClient(id) {
             if (!confirm('Delete this client?')) return;
 
-            await fetch(`/api/clients/${id}`, { method: 'DELETE' });
+            await authenticatedFetch(`/api/clients/${id}`, { method: 'DELETE' });
             loadClientsWithStatus();
         }
 
@@ -1027,9 +1807,8 @@
             const url = id ? `/api/clients/${id}` : '/api/clients';
             const method = id ? 'PUT' : 'POST';
 
-            await fetch(url, {
+            await authenticatedFetch(url, {
                 method,
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
 
@@ -1183,7 +1962,7 @@
 
         async function loadLogs(search = '') {
             const url = `/api/clients/${currentClientId}/logs` + (search ? `?search=${encodeURIComponent(search)}` : '');
-            const response = await fetch(url);
+            const response = await authenticatedFetch(url);
             const logs = await response.json();
 
             const listEl = document.getElementById('logs-list');
@@ -1209,9 +1988,8 @@
 
         async function checkIn() {
             const notes = document.getElementById('new-log-notes').value.trim();
-            await fetch(`/api/clients/${currentClientId}/logs`, {
+            await authenticatedFetch(`/api/clients/${currentClientId}/logs`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ notes: notes || null })
             });
             document.getElementById('new-log-notes').value = '';
@@ -1228,9 +2006,8 @@
             const client = stop.client;
             const notes = document.getElementById('exec-checkin-notes').value.trim();
 
-            await fetch(`/api/clients/${client.id}/logs`, {
+            await authenticatedFetch(`/api/clients/${client.id}/logs`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ notes: notes || null })
             });
 
@@ -1265,7 +2042,7 @@
         }
 
         async function loadRoutes() {
-            const response = await fetch('/api/routes');
+            const response = await authenticatedFetch('/api/routes');
             const routes = await response.json();
 
             const listEl = document.getElementById('routes-list');
@@ -1345,9 +2122,8 @@
             const url = editingRouteId ? `/api/routes/${editingRouteId}` : '/api/routes';
             const method = editingRouteId ? 'PUT' : 'POST';
 
-            await fetch(url, {
+            await authenticatedFetch(url, {
                 method,
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
 
@@ -1356,7 +2132,7 @@
         }
 
         async function startRoute(routeId) {
-            const response = await fetch(`/api/routes/${routeId}`);
+            const response = await authenticatedFetch(`/api/routes/${routeId}`);
             appState.activeRoute = await response.json();
             appState.currentStopIndex = 0;
             appState.completedStops = [];
@@ -1514,6 +2290,597 @@
             const showAllLink = document.getElementById('show-all-link');
             if (showAllLink) {
                 showAllLink.style.display = 'none';
+            }
+        }
+
+        // --- Route Templates ---
+        let templateClientIds = [];
+        let editingTemplateId = null;
+        let saveAsTemplateRouteId = null;
+
+        function openTemplatesModal() {
+            closeRoutesModal();
+            loadTemplates();
+            document.getElementById('templates-modal').classList.add('active');
+        }
+
+        function closeTemplatesModal() {
+            document.getElementById('templates-modal').classList.remove('active');
+        }
+
+        async function loadTemplates() {
+            try {
+                const response = await authenticatedFetch('/api/route-templates');
+                const templates = await response.json();
+
+                const listEl = document.getElementById('templates-list');
+                if (templates.length === 0) {
+                    listEl.innerHTML = '<div class="log-empty">No templates yet. Create one from a route or start fresh.</div>';
+                } else {
+                    const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                    listEl.innerHTML = templates.map(t => {
+                        const scheduleDays = t.schedule_days ? t.schedule_days.split(',').map(d => dayNames[parseInt(d)]) : [];
+                        return `
+                            <div class="template-item">
+                                <div class="template-info">
+                                    <h4>${t.name}</h4>
+                                    <small>${t.client_count} stops${t.description ? ' - ' + t.description : ''}</small>
+                                    ${scheduleDays.length > 0 ? `
+                                        <div class="schedule-days-tags">
+                                            ${scheduleDays.map(d => `<span class="schedule-day-tag">${d}</span>`).join('')}
+                                        </div>
+                                    ` : ''}
+                                </div>
+                                <div class="template-actions">
+                                    <button class="btn btn-success" onclick="createRouteFromTemplate(${t.id})">Use</button>
+                                    <button class="btn btn-secondary" onclick="editTemplate(${t.id})">Edit</button>
+                                    <button class="btn btn-danger" onclick="deleteTemplate(${t.id})">Del</button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            } catch (err) {
+                console.error('Failed to load templates:', err);
+            }
+        }
+
+        function openCreateTemplateModal() {
+            editingTemplateId = null;
+            templateClientIds = [];
+            document.getElementById('template-form-title').textContent = 'Create Template';
+            document.getElementById('template-name').value = '';
+            document.getElementById('template-description').value = '';
+            document.querySelectorAll('.schedule-day-checkbox').forEach(cb => cb.checked = false);
+            renderTemplateClientSelectList();
+            closeTemplatesModal();
+            document.getElementById('template-form-modal').classList.add('active');
+        }
+
+        function closeTemplateFormModal() {
+            document.getElementById('template-form-modal').classList.remove('active');
+        }
+
+        function renderTemplateClientSelectList() {
+            const listEl = document.getElementById('template-client-select-list');
+            const clientsWithCoords = allClients.filter(c => c.latitude && c.longitude);
+            listEl.innerHTML = clientsWithCoords.map(client => {
+                const idx = templateClientIds.indexOf(client.id);
+                const isSelected = idx !== -1;
+                return `
+                    <div class="client-select-item ${isSelected ? 'selected' : ''}" onclick="toggleTemplateClientSelect(${client.id})">
+                        <div class="client-order">${isSelected ? idx + 1 : ''}</div>
+                        <div>
+                            <strong>${client.name}</strong><br>
+                            <small style="color:#666;">${client.address || 'No address'}</small>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleTemplateClientSelect(clientId) {
+            const idx = templateClientIds.indexOf(clientId);
+            if (idx === -1) {
+                templateClientIds.push(clientId);
+            } else {
+                templateClientIds.splice(idx, 1);
+            }
+            renderTemplateClientSelectList();
+        }
+
+        function getSelectedScheduleDays() {
+            const days = [];
+            document.querySelectorAll('.schedule-day-checkbox:checked').forEach(cb => {
+                days.push(cb.value);
+            });
+            return days.length > 0 ? days.join(',') : null;
+        }
+
+        async function saveTemplate() {
+            const name = document.getElementById('template-name').value.trim();
+            if (!name) {
+                alert('Please enter a template name');
+                return;
+            }
+            if (templateClientIds.length === 0) {
+                alert('Please select at least one client');
+                return;
+            }
+
+            const data = {
+                name,
+                description: document.getElementById('template-description').value.trim() || null,
+                client_ids: templateClientIds,
+                schedule_days: getSelectedScheduleDays()
+            };
+
+            const url = editingTemplateId ? `/api/route-templates/${editingTemplateId}` : '/api/route-templates';
+            const method = editingTemplateId ? 'PUT' : 'POST';
+
+            try {
+                await authenticatedFetch(url, {
+                    method,
+                    body: JSON.stringify(data)
+                });
+
+                closeTemplateFormModal();
+                openTemplatesModal();
+            } catch (err) {
+                alert('Error saving template');
+            }
+        }
+
+        async function editTemplate(templateId) {
+            try {
+                const response = await authenticatedFetch(`/api/route-templates/${templateId}`);
+                const template = await response.json();
+
+                editingTemplateId = templateId;
+                templateClientIds = template.client_ids || [];
+                document.getElementById('template-form-title').textContent = 'Edit Template';
+                document.getElementById('template-name').value = template.name;
+                document.getElementById('template-description').value = template.description || '';
+
+                // Set schedule day checkboxes
+                document.querySelectorAll('.schedule-day-checkbox').forEach(cb => cb.checked = false);
+                if (template.schedule_days) {
+                    template.schedule_days.split(',').forEach(d => {
+                        const cb = document.querySelector(`.schedule-day-checkbox[value="${d}"]`);
+                        if (cb) cb.checked = true;
+                    });
+                }
+
+                renderTemplateClientSelectList();
+                closeTemplatesModal();
+                document.getElementById('template-form-modal').classList.add('active');
+            } catch (err) {
+                alert('Error loading template');
+            }
+        }
+
+        async function deleteTemplate(templateId) {
+            if (!confirm('Delete this template?')) return;
+
+            try {
+                await authenticatedFetch(`/api/route-templates/${templateId}`, { method: 'DELETE' });
+                loadTemplates();
+            } catch (err) {
+                alert('Error deleting template');
+            }
+        }
+
+        async function createRouteFromTemplate(templateId) {
+            const name = prompt('Enter route name (or leave empty for auto-generated name):');
+
+            try {
+                const url = `/api/route-templates/${templateId}/create-route${name ? `?name=${encodeURIComponent(name)}` : ''}`;
+                const response = await authenticatedFetch(url, { method: 'POST' });
+                const route = await response.json();
+
+                alert(`Route "${route.name}" created with ${route.client_count} stops!`);
+                closeTemplatesModal();
+                openRoutesModal();
+            } catch (err) {
+                alert('Error creating route from template');
+            }
+        }
+
+        // Save route as template
+        function openSaveAsTemplateModal(routeId, routeName) {
+            saveAsTemplateRouteId = routeId;
+            document.getElementById('save-template-name').value = routeName + ' Template';
+            document.querySelectorAll('.save-template-day').forEach(cb => cb.checked = false);
+            closeRoutesModal();
+            document.getElementById('save-template-modal').classList.add('active');
+        }
+
+        function closeSaveTemplateModal() {
+            document.getElementById('save-template-modal').classList.remove('active');
+        }
+
+        async function confirmSaveAsTemplate() {
+            const name = document.getElementById('save-template-name').value.trim();
+            if (!name) {
+                alert('Please enter a template name');
+                return;
+            }
+
+            const days = [];
+            document.querySelectorAll('.save-template-day:checked').forEach(cb => days.push(cb.value));
+            const scheduleDays = days.length > 0 ? days.join(',') : null;
+
+            try {
+                let url = `/api/routes/${saveAsTemplateRouteId}/save-as-template?name=${encodeURIComponent(name)}`;
+                if (scheduleDays) {
+                    url += `&schedule_days=${encodeURIComponent(scheduleDays)}`;
+                }
+
+                const response = await authenticatedFetch(url, { method: 'POST' });
+                const template = await response.json();
+
+                alert(`Template "${template.name}" created!`);
+                closeSaveTemplateModal();
+            } catch (err) {
+                alert('Error saving template');
+            }
+        }
+
+        // --- Schedule / Calendar ---
+        let scheduleState = {
+            currentMonth: new Date().getMonth(),
+            currentYear: new Date().getFullYear(),
+            assignments: [],
+            selectedDates: [],
+            routes: [],
+            users: []
+        };
+
+        function openScheduleModal() {
+            scheduleState.selectedDates = [];
+            loadScheduleData();
+            document.getElementById('schedule-modal').classList.add('active');
+        }
+
+        function closeScheduleModal() {
+            document.getElementById('schedule-modal').classList.remove('active');
+        }
+
+        async function loadScheduleData() {
+            // Load routes and users for assignment form
+            try {
+                const [routesRes, usersRes] = await Promise.all([
+                    authenticatedFetch('/api/routes'),
+                    authenticatedFetch('/api/users')
+                ]);
+
+                scheduleState.routes = await routesRes.json();
+                scheduleState.users = await usersRes.json();
+
+                // Populate route dropdown
+                const routeSelect = document.getElementById('assign-route-select');
+                routeSelect.innerHTML = '<option value="">Select a route...</option>' +
+                    scheduleState.routes.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+
+                // Populate user dropdown
+                const userSelect = document.getElementById('assign-user-select');
+                userSelect.innerHTML = '<option value="">Select a user...</option>' +
+                    scheduleState.users.filter(u => u.is_active).map(u => `<option value="${u.id}">${u.name}</option>`).join('');
+
+            } catch (err) {
+                console.error('Error loading schedule data:', err);
+            }
+
+            loadCalendarMonth();
+        }
+
+        async function loadCalendarMonth() {
+            const year = scheduleState.currentYear;
+            const month = scheduleState.currentMonth;
+
+            // Get first and last day of month
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+
+            // Get start of calendar (may include days from previous month)
+            const startDate = new Date(firstDay);
+            startDate.setDate(startDate.getDate() - ((firstDay.getDay() + 6) % 7)); // Start from Monday
+
+            // Get end of calendar (may include days from next month)
+            const endDate = new Date(lastDay);
+            const daysToAdd = (7 - lastDay.getDay()) % 7;
+            if (daysToAdd === 0 && lastDay.getDay() !== 0) {
+                endDate.setDate(endDate.getDate() + 7);
+            } else {
+                endDate.setDate(endDate.getDate() + daysToAdd);
+            }
+
+            // Update month title
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                                'July', 'August', 'September', 'October', 'November', 'December'];
+            document.getElementById('calendar-month-title').textContent = `${monthNames[month]} ${year}`;
+
+            // Load assignments for this range
+            try {
+                const response = await authenticatedFetch(
+                    `/api/schedule?start_date=${formatDate(startDate)}&end_date=${formatDate(endDate)}`
+                );
+                scheduleState.assignments = await response.json();
+            } catch (err) {
+                console.error('Error loading assignments:', err);
+                scheduleState.assignments = [];
+            }
+
+            renderCalendar(startDate, endDate, month);
+        }
+
+        function renderCalendar(startDate, endDate, currentMonth) {
+            const calendarEl = document.getElementById('calendar-days');
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            let html = '';
+            let current = new Date(startDate);
+
+            while (current <= endDate) {
+                const dateStr = formatDate(current);
+                const isOtherMonth = current.getMonth() !== currentMonth;
+                const isToday = current.getTime() === today.getTime();
+                const isSelected = scheduleState.selectedDates.includes(dateStr);
+
+                // Get assignments for this day
+                const dayAssignments = scheduleState.assignments.filter(a => a.assigned_date === dateStr);
+
+                html += `
+                    <div class="calendar-day ${isOtherMonth ? 'other-month' : ''} ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}"
+                         onclick="toggleCalendarDate('${dateStr}')">
+                        <div class="day-number">${current.getDate()}</div>
+                        <div class="day-assignments">
+                            ${dayAssignments.slice(0, 3).map(a => `
+                                <div class="day-assignment ${a.status}">${a.route_name}</div>
+                            `).join('')}
+                            ${dayAssignments.length > 3 ? `<div style="font-size:10px;color:#666;">+${dayAssignments.length - 3} more</div>` : ''}
+                        </div>
+                    </div>
+                `;
+
+                current.setDate(current.getDate() + 1);
+            }
+
+            calendarEl.innerHTML = html;
+
+            // Show assignment form
+            document.getElementById('assignment-form').style.display = 'block';
+            updateSelectedDatesDisplay();
+        }
+
+        function toggleCalendarDate(dateStr) {
+            const idx = scheduleState.selectedDates.indexOf(dateStr);
+            if (idx === -1) {
+                scheduleState.selectedDates.push(dateStr);
+            } else {
+                scheduleState.selectedDates.splice(idx, 1);
+            }
+
+            // Update calendar day styling
+            document.querySelectorAll('.calendar-day').forEach(el => {
+                const dayNum = el.querySelector('.day-number').textContent;
+                const elDate = formatDate(new Date(scheduleState.currentYear, scheduleState.currentMonth, parseInt(dayNum)));
+                el.classList.toggle('selected', scheduleState.selectedDates.includes(elDate));
+            });
+
+            updateSelectedDatesDisplay();
+        }
+
+        function updateSelectedDatesDisplay() {
+            const container = document.getElementById('selected-dates');
+            if (scheduleState.selectedDates.length === 0) {
+                container.innerHTML = '<span style="color:#666;font-size:13px;">Click calendar days to select</span>';
+            } else {
+                container.innerHTML = scheduleState.selectedDates.sort().map(d => `
+                    <span class="selected-date-tag">
+                        ${d}
+                        <button onclick="removeSelectedDate('${d}')">&times;</button>
+                    </span>
+                `).join('');
+            }
+        }
+
+        function removeSelectedDate(dateStr) {
+            const idx = scheduleState.selectedDates.indexOf(dateStr);
+            if (idx !== -1) {
+                scheduleState.selectedDates.splice(idx, 1);
+                loadCalendarMonth(); // Refresh to update visuals
+            }
+        }
+
+        function clearScheduleSelection() {
+            scheduleState.selectedDates = [];
+            document.getElementById('assign-route-select').value = '';
+            document.getElementById('assign-user-select').value = '';
+            loadCalendarMonth();
+        }
+
+        function prevMonth() {
+            scheduleState.currentMonth--;
+            if (scheduleState.currentMonth < 0) {
+                scheduleState.currentMonth = 11;
+                scheduleState.currentYear--;
+            }
+            loadCalendarMonth();
+        }
+
+        function nextMonth() {
+            scheduleState.currentMonth++;
+            if (scheduleState.currentMonth > 11) {
+                scheduleState.currentMonth = 0;
+                scheduleState.currentYear++;
+            }
+            loadCalendarMonth();
+        }
+
+        async function createAssignments() {
+            const routeId = document.getElementById('assign-route-select').value;
+            const userId = document.getElementById('assign-user-select').value;
+
+            if (!routeId) {
+                alert('Please select a route');
+                return;
+            }
+            if (!userId) {
+                alert('Please select a user');
+                return;
+            }
+            if (scheduleState.selectedDates.length === 0) {
+                alert('Please select at least one date');
+                return;
+            }
+
+            try {
+                const response = await authenticatedFetch('/api/schedule/batch', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        route_id: parseInt(routeId),
+                        user_id: parseInt(userId),
+                        dates: scheduleState.selectedDates
+                    })
+                });
+
+                const result = await response.json();
+                alert(result.message);
+
+                // Refresh calendar
+                scheduleState.selectedDates = [];
+                loadCalendarMonth();
+            } catch (err) {
+                alert('Error creating assignments');
+            }
+        }
+
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // --- My Assignments ---
+        function openMyAssignmentsModal() {
+            // Set default date to today
+            const today = new Date();
+            document.getElementById('assignments-date').value = formatDate(today);
+            loadMyAssignments();
+            document.getElementById('my-assignments-modal').classList.add('active');
+        }
+
+        function closeMyAssignmentsModal() {
+            document.getElementById('my-assignments-modal').classList.remove('active');
+        }
+
+        async function loadMyAssignments() {
+            const dateInput = document.getElementById('assignments-date');
+            const dateStr = dateInput.value;
+
+            if (!dateStr) return;
+
+            try {
+                const response = await authenticatedFetch(`/api/my-routes?date=${dateStr}`);
+                const assignments = await response.json();
+
+                const listEl = document.getElementById('my-assignments-list');
+                if (assignments.length === 0) {
+                    listEl.innerHTML = '<div class="log-empty">No assignments for this date</div>';
+                } else {
+                    // Need to fetch route details for each assignment
+                    const assignmentsWithDetails = await Promise.all(
+                        assignments.map(async (a) => {
+                            try {
+                                const routeRes = await authenticatedFetch(`/api/routes/${a.route_id}`);
+                                const route = await routeRes.json();
+                                return { ...a, route };
+                            } catch {
+                                return { ...a, route: null };
+                            }
+                        })
+                    );
+
+                    listEl.innerHTML = assignmentsWithDetails.map(a => {
+                        const statusColors = { pending: '#94a3b8', in_progress: '#f59e0b', completed: '#22c55e' };
+                        const statusLabels = { pending: 'Pending', in_progress: 'In Progress', completed: 'Completed' };
+
+                        return `
+                            <div class="route-item" style="cursor:default;">
+                                <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                                    <div>
+                                        <h4>${a.route?.name || 'Route #' + a.route_id}</h4>
+                                        <small>${a.route?.clients?.length || '?'} stops</small>
+                                    </div>
+                                    <span style="background:${statusColors[a.status]};color:white;padding:2px 8px;border-radius:4px;font-size:11px;">
+                                        ${statusLabels[a.status]}
+                                    </span>
+                                </div>
+                                ${a.status !== 'completed' ? `
+                                    <div style="margin-top:8px;">
+                                        <button class="btn btn-success" style="width:auto;padding:6px 12px;font-size:12px;"
+                                            onclick="startAssignedRoute(${a.id}, ${a.route_id})">
+                                            ${a.status === 'pending' ? 'Start Route' : 'Continue'}
+                                        </button>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `;
+                    }).join('');
+                }
+            } catch (err) {
+                console.error('Error loading assignments:', err);
+            }
+        }
+
+        async function startAssignedRoute(assignmentId, routeId) {
+            // Update status to in_progress
+            try {
+                await authenticatedFetch(`/api/route-assignments/${assignmentId}/status?status=in_progress`, { method: 'PUT' });
+            } catch (err) {
+                console.error('Error updating assignment status:', err);
+            }
+
+            closeMyAssignmentsModal();
+            startRoute(routeId);
+        }
+
+        // Update loadRoutes to include save as template button
+        async function loadRoutes() {
+            const response = await authenticatedFetch('/api/routes');
+            const routes = await response.json();
+
+            const listEl = document.getElementById('routes-list');
+            if (routes.length === 0) {
+                listEl.innerHTML = '<div class="log-empty">No routes yet</div>';
+            } else {
+                listEl.innerHTML = routes.map(r => `
+                    <div class="template-item">
+                        <div class="template-info" onclick="startRoute(${r.id})" style="cursor:pointer;flex:1;">
+                            <h4>${r.name}</h4>
+                            <small>${r.client_count} stops${r.description ? ' - ' + r.description : ''}</small>
+                        </div>
+                        <div class="template-actions">
+                            <button class="btn btn-success" onclick="startRoute(${r.id})" title="Execute this route">Run</button>
+                            <button class="btn btn-purple" onclick="openSaveAsTemplateModal(${r.id}, '${r.name.replace(/'/g, "\\'")}')">Save</button>
+                            <button class="btn btn-danger" onclick="deleteRoute(${r.id})">Del</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        async function deleteRoute(routeId) {
+            if (!confirm('Delete this route?')) return;
+
+            try {
+                await authenticatedFetch(`/api/routes/${routeId}`, { method: 'DELETE' });
+                loadRoutes();
+            } catch (err) {
+                alert('Error deleting route');
             }
         }
     </script>
